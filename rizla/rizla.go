@@ -173,7 +173,6 @@ func buildProject(p *Project) error {
 	if err := goBuild.Run(); err != nil {
 		return err
 	}
-	println("build the mainfile " + p.MainFile)
 	return nil
 }
 
@@ -183,8 +182,6 @@ func runProject(p *Project) error {
 	if isWindows {
 		buildProject += ".exe"
 	}
-
-	println("run exe fname: " + buildProject)
 
 	runCmd := exec.Command("." + buildProject)
 	runCmd.Dir = p.dir

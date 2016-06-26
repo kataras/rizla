@@ -1,4 +1,4 @@
-package goo
+package rizla
 
 import (
 	"io/ioutil"

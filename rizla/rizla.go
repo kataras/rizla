@@ -1,5 +1,5 @@
-//Package goo contains the source code of the goo project
-package goo
+//Package rizla contains the source code of the rizla project
+package rizla
 
 import (
 	"os"
@@ -38,7 +38,7 @@ func Reset() {
 var (
 	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant")
 	errInvalidExt  = errors.New("%s is not a go program")
-	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/goo/issues")
+	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues")
 	errBuild       = errors.New("\n Failed to build the %s iris program. Trace: %s")
 	errRun         = errors.New("\n Failed to run the %s iris program. Trace: %s")
 )

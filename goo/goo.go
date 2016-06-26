@@ -104,12 +104,13 @@ func goBuildProject(p *Project) error {
 
 func goRunProject(p *Project) error {
 
-	executablePath := p.MainFile[0 : len(p.MainFile)-3]
+	execFilename := p.MainFile[len(p.compiledDirectory) : len(p.MainFile)-3]
 	if isWindows {
-		executablePath += ".exe"
+		execFilename += ".exe"
 	}
 
-	runCmd := exec.Command("." + pathSeparator + executablePath)
+	runCmd := exec.Command("." + pathSeparator + execFilename)
+	runCmd.Dir = p.compiledDirectory
 	runCmd.Stdout = Out
 	runCmd.Stderr = Err
 	runCmd.Stdin = In

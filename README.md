@@ -16,19 +16,14 @@ Rizla builds, runs and monitors your Go Applications with ease.
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
 
+# Get Started
 
-
-##### How to Use it as a command line tool to monitor your Go applications:
-one
-```sh
-$   rizla main.go
-```
-multi monitoring
-```sh
-$   rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go
+```bash
+$ rizla main.go #single project monitoring
+$ rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go #multi projects monitoring
 ```
 
-##### How to Use it inside your existing project's source code:
+Want to use it from your project's source code? easy
 ```sh
 $ cat from_code_newbie.go
 ```

@@ -30,10 +30,12 @@ var (
 	pathSeparator = string(os.PathSeparator)
 )
 
-// Add receives a Project and adds it to the projects
-func Add(p *Project) {
-	p.prepare()
-	projects = append(projects, p)
+// Add project(s) to the container
+func Add(proj ...*Project) {
+	for _, p := range proj {
+		p.prepare()
+		projects = append(projects, p)
+	}
 }
 
 // RemoveAll clears the current projects, doesn't stop them if running
@@ -41,7 +43,7 @@ func RemoveAll() {
 	projects = make([]*Project, 0)
 }
 
-// () how much projects has been added so far
+// Len how much projects have  been added so far
 func Len() int {
 	return len(projects)
 }
@@ -55,8 +57,15 @@ var (
 	printer = color.New()
 )
 
-//Run starts the repeat of the build-run-watch-reload task
-func Run() {
+// Run starts the repeat of the build-run-watch-reload task of all projects
+// receives optional parameters which can be the main source file of the project(s) you want to add, they can work nice with .Add(project) also, so dont worry use it.
+func Run(sources ...string) {
+	if len(sources) > 0 {
+		for _, s := range sources {
+			Add(NewProject(s))
+		}
+	}
+
 	color.Output = colorable.NewColorable(Out)
 
 	watcher, werr := fsnotify.NewWatcher()

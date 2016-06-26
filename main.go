@@ -21,7 +21,7 @@ const (
 	// Name of Rizla
 	Name = "Rizla"
 	// Description of Rizla
-	Description = "Rizzla builds, runs and monitors your Go Applications with ease."
+	Description = "Rizla builds, runs and monitors your Go Applications with ease."
 )
 
 var helpTmpl = fmt.Sprintf(`NAME:

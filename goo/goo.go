@@ -78,8 +78,28 @@ func Run() {
 
 						if p.winEvtCount%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
 							if p.Matcher(filename) {
-								color.Cyan("Change detected, reloading now")
+								Out.WriteString(color.CyanString("\n%s: A change has been detected, reloading now...", p.Name)) // we don't want new line at the end because of the success msg
 								p.lastChange = time.Now()
+								// kill previous running instance
+								err := killProcess(p.proc)
+								if err != nil {
+									color.Red(err.Error())
+									continue
+								}
+								// go build
+								err = buildProject(p)
+								if err != nil {
+									color.Red(errBuild.Format(err.Error()).Error())
+									continue
+								}
+
+								// exec run the builded program
+								err = runProject(p)
+								if err != nil {
+									color.Red(errRun.Format(err.Error()).Error())
+									continue
+								}
+								color.Green("ready!")
 
 							}
 
@@ -118,6 +138,10 @@ func runProject(p *Project) error {
 	runCmd.Stderr = Err
 	runCmd.Stdin = In
 
+	if p.Args != nil && len(p.Args) > 0 {
+		runCmd.Args = p.Args[0 : len(p.Args)-1]
+	}
+
 	if err := runCmd.Start(); err != nil {
 		return err
 	}
@@ -133,7 +157,7 @@ func killProcess(proc *os.Process) (err error) {
 	if err == nil {
 		_, err = proc.Wait()
 	} else {
-		// force kill, sometimes runCmd.Process.Kill or Signal(os.Kill) doesn't kills
+		// force kill, sometimes proc.Kill or Signal(os.Kill) doesn't kills
 		if isWindows {
 			err = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(proc.Pid)).Run()
 		} else {

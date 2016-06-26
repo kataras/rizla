@@ -31,16 +31,18 @@ func init() {
 // MatcherFunc returns whether the file should be watched for the reload
 type MatcherFunc func(string) bool
 
-// DefaultMatcher is the default Matcher for the Project iteral
-func DefaultMatcher(fullname string) bool {
+// DefaultGoMatcher is the default Matcher for the Project iteral
+func DefaultGoMatcher(fullname string) bool {
 	return filepath.Ext(fullname) == goExt || (!isWindows && strings.Contains(fullname, goExt))
 }
 
 // Project the struct which contains the necessary fields to watch and reload(rerun) a go project
 type Project struct {
+	// optional Name for the project
+	Name string
 	// MainFile is the absolute path of the go project's main file source.
 	MainFile string
-	Args     map[string]string
+	Args     []string
 	Matcher  MatcherFunc
 	// AllowReloadAfter skip reload on file changes that made too fast from the last reload
 	// minimum duration is 1 second.
@@ -58,7 +60,7 @@ type Project struct {
 
 func (p *Project) prepare() {
 	if p.Matcher == nil {
-		p.Matcher = DefaultMatcher
+		p.Matcher = DefaultGoMatcher
 	}
 
 	if p.AllowReloadAfter < minimumAllowReloadAfter {
@@ -69,7 +71,7 @@ func (p *Project) prepare() {
 		p.MainFile = "main.go"
 	}
 	if !filepath.IsAbs(p.MainFile) {
-		p.MainFile = workingDir + pathSeparator + p.MainFile
+		p.MainFile, _ = filepath.Abs(p.MainFile)
 	}
 
 	p.compiledDirectory = filepath.Dir(p.MainFile)
@@ -81,9 +83,8 @@ func (p *Project) prepare() {
 
 	for _, subfile := range subfiles {
 		if subfile.IsDir() {
-			if abspath, err := filepath.Abs(p.compiledDirectory + pathSeparator + subfile.Name()); err == nil {
-				p.compiledDirectories = append(p.compiledDirectories, abspath)
-			}
+			path := p.compiledDirectory + pathSeparator + subfile.Name()
+			p.compiledDirectories = append(p.compiledDirectories, path)
 		}
 	}
 

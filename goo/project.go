@@ -37,12 +37,15 @@ func DefaultMatcher(fullname string) bool {
 // Project the struct which contains the necessary fields to watch and reload(rerun) a go project
 type Project struct {
 	// MainFile is the absolute path of the go project's main file source.
-	MainFile          string
+	MainFile string
+	Args     map[string]string
+	Matcher  MatcherFunc
+
 	compiledDirectory string
 	// compiledDirectories contains all subdirectories from the Directory, this field is actually used
 	compiledDirectories []string
-	Args                map[string]string
-	Matcher             MatcherFunc
+	// proc the system Process of a running instance (if any)
+	proc *os.Process
 }
 
 func (p *Project) prepare() {

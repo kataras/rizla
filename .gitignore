@@ -1,0 +1,4 @@
+.project
+.settings
+.vscode/*
+.atom-build.json

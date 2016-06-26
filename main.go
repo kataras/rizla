@@ -1,4 +1,4 @@
-//Package main Rizla builds, runs and watches your Go Applications with ease.
+//Package main Rizla builds, runs and monitors your Go Applications with ease.
 //
 //   rizla main.go
 //   rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
@@ -10,6 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fatih/color"
+	"github.com/kataras/rizla/rizla"
 )
 
 const (
@@ -18,7 +21,7 @@ const (
 	// Name of Rizla
 	Name = "Rizla"
 	// Description of Rizla
-	Description = "Builds, runs and watches your Go Applications with ease."
+	Description = "Rizzla builds, runs and monitors your Go Applications with ease."
 )
 
 var helpTmpl = fmt.Sprintf(`NAME:
@@ -36,20 +39,37 @@ func main() {
 	argsLen := len(os.Args)
 
 	if argsLen <= 1 {
-		help()
-	} else if argsLen == 2 && os.Args[1] == "help" {
-		help()
+		help(-1)
+	} else if isArgHelp(os.Args[1]) {
+		help(0)
 	}
+
 	args := os.Args[1:]
 	for _, a := range args {
 		if !strings.HasSuffix(a, ".go") {
-			pleaseGo()
+			color.Red("Error: Please provide files with '.go' extension.\n")
+			help(-1)
 		} else if p, _ := filepath.Abs(a); !fileExists(p) {
-			fileDoesntFound(p)
+			color.Red("Error: File " + p + " does not exists.\n")
+			help(-1)
 		}
 	}
 
-	println(strings.Join(args, ","))
+	for _, a := range args {
+		p := rizla.NewProject(a)
+		rizla.Add(p)
+	}
+
+	rizla.Run()
+}
+
+func help(code int) {
+	os.Stdout.WriteString(helpTmpl)
+	os.Exit(code)
+}
+
+func isArgHelp(s string) bool {
+	return s == "help" || s == "-h" || s == "-help"
 }
 
 func fileExists(f string) bool {
@@ -57,19 +77,4 @@ func fileExists(f string) bool {
 		return false
 	}
 	return true
-}
-
-func help() {
-	println(helpTmpl)
-	os.Exit(-1)
-}
-
-func pleaseGo() {
-	println("Please provide files with .go")
-	os.Exit(-1)
-}
-
-func fileDoesntFound(arg string) {
-	println("file " + arg + " doesnt found")
-	os.Exit(-1)
 }

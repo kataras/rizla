@@ -4,6 +4,7 @@ package rizla
 import (
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -13,15 +14,20 @@ import (
 	"github.com/mattn/go-colorable"
 )
 
+const (
+	isWindows = runtime.GOOS == "windows"
+	goExt     = ".go"
+)
+
 var (
 	// Out The logger output for all projects
 	Out = os.Stdout
 	// Err The logger output for errors for all projects
 	Err = os.Stderr
-	// In The input for all projects
-	In = os.Stdin
 
 	projects []*Project
+
+	pathSeparator = string(os.PathSeparator)
 )
 
 // Add receives a Project and adds it to the projects
@@ -30,17 +36,23 @@ func Add(p *Project) {
 	projects = append(projects, p)
 }
 
-// Reset clears the current projects, doesn't stop them if running
-func Reset() {
-	projects = projects[0:0]
+// RemoveAll clears the current projects, doesn't stop them if running
+func RemoveAll() {
+	projects = make([]*Project, 0)
+}
+
+// () how much projects has been added so far
+func Len() int {
+	return len(projects)
 }
 
 var (
-	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant")
-	errInvalidExt  = errors.New("%s is not a go program")
-	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues")
-	errBuild       = errors.New("\n Failed to build the %s iris program. Trace: %s")
-	errRun         = errors.New("\n Failed to run the %s iris program. Trace: %s")
+	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant\n")
+	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues\n")
+	errBuild       = errors.New("Failed to build the program. Trace: %s\n")
+	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
+
+	printer = color.New()
 )
 
 //Run starts the repeat of the build-run-watch-reload task
@@ -49,22 +61,46 @@ func Run() {
 
 	watcher, werr := fsnotify.NewWatcher()
 	if werr != nil {
-		color.Red(werr.Error())
+		dangerf(werr.Error())
 		return
 	}
 
 	for _, p := range projects {
-		for _, subdir := range p.compiledDirectories {
+
+		// go build
+		err := buildProject(p)
+		if err != nil {
+			dangerf(errBuild.Format(err.Error()).Error())
+			continue
+		}
+
+		// exec run the builded program
+		err = runProject(p)
+		if err != nil {
+			dangerf(errRun.Format(err.Error()).Error())
+			continue
+		}
+
+		// add to the watcher
+		// add its root folder
+		if werr = watcher.Add(p.dir); werr != nil {
+			dangerf("\n" + werr.Error() + "\n")
+		}
+		// add subdirs also
+		for _, subdir := range p.subdirs {
 			if werr = watcher.Add(subdir); werr != nil {
-				color.Red(werr.Error())
+				dangerf("\n" + werr.Error() + "\n")
 			}
 		}
+
 	}
 
+	// if something bad happens and program exits, show an unexpecter error message
 	defer func() {
-		color.Red(errUnexpected.Error())
+		dangerf(errUnexpected.Error())
 	}()
 
+	// run the watcher
 	for {
 		select {
 		case event := <-watcher.Events:
@@ -78,28 +114,32 @@ func Run() {
 
 						if p.winEvtCount%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
 							if p.Matcher(filename) {
-								Out.WriteString(color.CyanString("\n%s: A change has been detected, reloading now...", p.Name)) // we don't want new line at the end because of the success msg
+								fromproject := ""
+								if p.Name != "" {
+									fromproject = "From project '" + p.Name + "': "
+								}
+								infof("\n%sA change has been detected, reloading now...", fromproject)
 								p.lastChange = time.Now()
 								// kill previous running instance
 								err := killProcess(p.proc)
 								if err != nil {
-									color.Red(err.Error())
+									dangerf(err.Error())
 									continue
 								}
 								// go build
 								err = buildProject(p)
 								if err != nil {
-									color.Red(errBuild.Format(err.Error()).Error())
+									dangerf(errBuild.Format(err.Error()).Error())
 									continue
 								}
 
 								// exec run the builded program
 								err = runProject(p)
 								if err != nil {
-									color.Red(errRun.Format(err.Error()).Error())
+									dangerf(errRun.Format(err.Error()).Error())
 									continue
 								}
-								color.Green("ready!")
+								successf("ready!\n")
 
 							}
 
@@ -109,34 +149,38 @@ func Run() {
 
 			}
 		case err := <-watcher.Errors:
-			color.Red(err.Error())
+			dangerf(err.Error())
 		}
 	}
 
 }
 
 func buildProject(p *Project) error {
-	goBuild := exec.Command("go", "build", p.MainFile)
+	relative := p.MainFile[len(p.dir)+1:len(p.MainFile)-3] + goExt
+	goBuild := exec.Command("go", "build", relative)
+	goBuild.Dir = p.dir
 	goBuild.Stdout = Out
 	goBuild.Stderr = Err
 	if err := goBuild.Run(); err != nil {
 		return err
 	}
+	println("build the mainfile " + p.MainFile)
 	return nil
 }
 
 func runProject(p *Project) error {
 
-	execFilename := p.MainFile[len(p.compiledDirectory) : len(p.MainFile)-3]
+	buildProject := p.MainFile[len(p.dir) : len(p.MainFile)-3] // with prepended slash
 	if isWindows {
-		execFilename += ".exe"
+		buildProject += ".exe"
 	}
 
-	runCmd := exec.Command("." + pathSeparator + execFilename)
-	runCmd.Dir = p.compiledDirectory
+	println("run exe fname: " + buildProject)
+
+	runCmd := exec.Command("." + buildProject)
+	runCmd.Dir = p.dir
 	runCmd.Stdout = Out
 	runCmd.Stderr = Err
-	runCmd.Stdin = In
 
 	if p.Args != nil && len(p.Args) > 0 {
 		runCmd.Args = p.Args[0 : len(p.Args)-1]
@@ -165,4 +209,19 @@ func killProcess(proc *os.Process) (err error) {
 		}
 	}
 	return
+}
+
+func dangerf(format string, a ...interface{}) {
+	printer.Add(color.FgRed)
+	printer.Printf(format, a...)
+}
+
+func infof(format string, a ...interface{}) {
+	printer.Add(color.FgCyan)
+	printer.Printf(format, a...)
+}
+
+func successf(format string, a ...interface{}) {
+	printer.Add(color.FgGreen)
+	printer.Printf(format, a...)
 }

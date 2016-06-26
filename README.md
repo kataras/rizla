@@ -72,7 +72,7 @@ func main() {
 	 return filename == "I_want_to_reload_only_when_this_file_changed.go"
   }
   // Add arguments, these will be used from the executable file
-  project.Args = {}string["-myargument","the value","-otherargument","a value"]
+  project.Args = []string{"-myargument","the value","-otherargument","a value"}
 
   // End of optional
 

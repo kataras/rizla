@@ -125,8 +125,8 @@ Read more about Semantic Versioning 2.0.0
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
 
- Todo
- ------------
+Todo
+------------
 
  - [ ] Tests
  - [ ] Provide full examples.

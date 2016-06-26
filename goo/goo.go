@@ -4,6 +4,7 @@ package goo
 import (
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/fatih/color"
@@ -18,7 +19,8 @@ var (
 	// Err The logger output for errors for all projects
 	Err = os.Stderr
 	// In The input for all projects
-	In       = os.Stdin
+	In = os.Stdin
+
 	projects []*Project
 )
 
@@ -63,24 +65,25 @@ func Run() {
 		color.Red(errUnexpected.Error())
 	}()
 
-	var lastChange = time.Now()
-	var i = 0
 	for {
 		select {
 		case event := <-watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				filename := event.Name
-				for _, p := range projects {
-					if p.Matcher(filename) {
 
-					}
-				}
-				//this is received two times, the last time is the real changed file (at least on windows(?)), so
-				i++
-				if i%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
-					if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {
-						lastChange = time.Now()
-						//TODO
+				for _, p := range projects {
+					//this is received two times, the last time is the real changed file (at least on windows(?)), so
+					p.winEvtCount++
+					if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
+
+						if p.winEvtCount%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
+							if p.Matcher(filename) {
+								color.Cyan("Change detected, reloading now")
+								p.lastChange = time.Now()
+
+							}
+
+						}
 					}
 				}
 
@@ -92,7 +95,7 @@ func Run() {
 
 }
 
-func goBuildProject(p *Project) error {
+func buildProject(p *Project) error {
 	goBuild := exec.Command("go", "build", p.MainFile)
 	goBuild.Stdout = Out
 	goBuild.Stderr = Err
@@ -102,7 +105,7 @@ func goBuildProject(p *Project) error {
 	return nil
 }
 
-func goRunProject(p *Project) error {
+func runProject(p *Project) error {
 
 	execFilename := p.MainFile[len(p.compiledDirectory) : len(p.MainFile)-3]
 	if isWindows {
@@ -120,4 +123,22 @@ func goRunProject(p *Project) error {
 	}
 	p.proc = runCmd.Process
 	return nil
+}
+
+func killProcess(proc *os.Process) (err error) {
+	if proc == nil {
+		return nil
+	}
+	err = proc.Kill()
+	if err == nil {
+		_, err = proc.Wait()
+	} else {
+		// force kill, sometimes runCmd.Process.Kill or Signal(os.Kill) doesn't kills
+		if isWindows {
+			err = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(proc.Pid)).Run()
+		} else {
+			err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
+		}
+	}
+	return
 }

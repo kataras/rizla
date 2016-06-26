@@ -6,11 +6,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 const (
-	isWindows = runtime.GOOS == "windows"
-	goExt     = ".go"
+	isWindows               = runtime.GOOS == "windows"
+	goExt                   = ".go"
+	minimumAllowReloadAfter = time.Duration(1) * time.Second
 )
 
 var (
@@ -40,15 +42,29 @@ type Project struct {
 	MainFile string
 	Args     map[string]string
 	Matcher  MatcherFunc
-
+	// AllowReloadAfter skip reload on file changes that made too fast from the last reload
+	// minimum duration is 1 second.
+	AllowReloadAfter  time.Duration
 	compiledDirectory string
-	// compiledDirectories contains all subdirectories from the Directory, this field is actually used
+	// compiledDirectories contains all subdirectories from the compiledDirectory, this field is actually used
 	compiledDirectories []string
 	// proc the system Process of a running instance (if any)
 	proc *os.Process
+	// when the last change was made
+	lastChange time.Time
+	// Used only on windows, winEvtCount ever this is not an odd  number then the event is valid
+	winEvtCount int
 }
 
 func (p *Project) prepare() {
+	if p.Matcher == nil {
+		p.Matcher = DefaultMatcher
+	}
+
+	if p.AllowReloadAfter < minimumAllowReloadAfter {
+		p.AllowReloadAfter = minimumAllowReloadAfter
+	}
+
 	if p.MainFile == "" {
 		p.MainFile = "main.go"
 	}
@@ -71,7 +87,4 @@ func (p *Project) prepare() {
 		}
 	}
 
-	if p.Matcher == nil {
-		p.Matcher = DefaultMatcher
-	}
 }

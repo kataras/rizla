@@ -25,7 +25,7 @@ $ rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go #multi pro
 
 Want to use it from your project's source code? easy
 ```sh
-$ cat from_code_newbie.go
+$ cat from_code_simple.go
 ```
 ```go
 package main
@@ -93,10 +93,7 @@ Features
 
 People
 ------------
-If you'd like to discuss this package, or ask questions about it, feel free to
-
-* Post an issue or  idea [here](https://github.com/kataras/rizla/issues)
-* [Chat]( https://gitter.im/kataras/rizla)
+If you'd like to discuss this package, or ask questions about it, feel free to [Chat]( https://gitter.im/kataras/rizla).
 
 The author of rizla is [@kataras](https://github.com/kataras).
 

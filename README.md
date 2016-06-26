@@ -53,8 +53,16 @@ import (
 )
 
 func main() {
+  // Optional, set the messages/logs output destination of our application,
+  // let's set them to their defaults
+  rizla.Out = os.Stdout
+  rizla.Err = os.Stderr
+
   // Create a new project by the main source file
   project := rizla.NewProject("C:/myproject/main.go")
+
+  // The below are optional
+
   // Provide a Name which will be printed before the 'A change has detected, reloading now...'
   project.Name = "My super project"
   // Allow reload every 3 seconds or more no less
@@ -63,13 +71,13 @@ func main() {
   project.Matcher = func(filename string) bool {
 	 return filename == "I_want_to_reload_only_when_this_file_changed.go"
   }
+  // Add arguments, these will be used from the executable file
+  project.Args = {}string["-myargument","the value","-otherargument","a value"]
+
+  // End of optional
 
   // Add the project to the rizla container
   rizla.Add(project)
-
-  // change the output destination of our application, let's set them to their defaults
-  rizla.Out = os.Stdout
-  rizla.Err = os.Stderr
   //  Build, run & start monitoring the project(s)
   rizla.Run()
 }
@@ -116,6 +124,12 @@ Read more about Semantic Versioning 2.0.0
  - https://en.wikipedia.org/wiki/Software_versioning
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
 
+
+ Todo
+ ------------
+
+ - [ ] Tests
+ - [ ] Provide full examples.
 
 Third-Party Licenses
 ------------

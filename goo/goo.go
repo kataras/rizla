@@ -50,7 +50,7 @@ func Run() {
 				select {
 				case event := <-watcher.Events:
 					if event.Op&fsnotify.Write == fsnotify.Write {
-						//this is received two times, the last time is the real changed file, so
+						//this is received two times, the last time is the real changed file (at least on windows(?)), so
 						i++
 						if i%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
 							if time.Now().After(lastChange.Add(time.Duration(1) * time.Second)) {

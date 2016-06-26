@@ -48,6 +48,8 @@ package main
 
 import (
 	"github.com/kataras/rizla/rizla"
+	"time"
+	"os"
 )
 
 func main() {
@@ -55,8 +57,8 @@ func main() {
   project := rizla.NewProject("C:/myproject/main.go")
   // Provide a Name which will be printed before the 'A change has detected, reloading now...'
   project.Name = "My super project"
-  // Allow reload every 2 seconds or more no less
-  project.AllowReloadAfter = 2*time.Second
+  // Allow reload every 3 seconds or more no less
+  project.AllowReloadAfter = time.Duration(3) * time.Second
   // Custom file matcher
   project.Matcher = func(filename string) bool {
 	 return filename == "I_want_to_reload_only_when_this_file_changed.go"
@@ -64,6 +66,10 @@ func main() {
 
   // Add the project to the rizla container
   rizla.Add(project)
+
+  // change the output destination of our application, let's set them to their defaults
+  rizla.Out = os.Stdout
+  rizla.Err = os.Stderr
   //  Build, run & start monitoring the project(s)
   rizla.Run()
 }

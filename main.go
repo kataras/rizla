@@ -17,7 +17,7 @@ import (
 
 const (
 	// Version of rizla command line tool
-	Version = "0.0.1"
+	Version = "0.0.2"
 	// Name of rizla
 	Name = "Rizla"
 	// Description of rizla

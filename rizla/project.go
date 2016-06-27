@@ -1,7 +1,6 @@
 package rizla
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -9,14 +8,22 @@ import (
 	"time"
 )
 
-const minimumAllowReloadAfter = time.Duration(1) * time.Second
+const minimumAllowReloadAfter = time.Duration(3) * time.Second
 
 // MatcherFunc returns whether the file should be watched for the reload
 type MatcherFunc func(string) bool
 
 // DefaultGoMatcher is the default Matcher for the Project iteral
 func DefaultGoMatcher(fullname string) bool {
-	return filepath.Ext(fullname) == goExt || (!isWindows && strings.Contains(fullname, goExt))
+	return (filepath.Ext(fullname) == goExt) ||
+		(!isWindows && strings.Contains(fullname, goExt))
+}
+
+// DefaultWatcher is the default Watcher for the Project iteral
+// allows all subdirs except .git, node_modules and vendor
+func DefaultWatcher(abs string) bool {
+	base := filepath.Base(abs)
+	return !(base == ".git" || base == "node_modules" || base == "vendor")
 }
 
 // Project the struct which contains the necessary fields to watch and reload(rerun) a go project
@@ -26,21 +33,29 @@ type Project struct {
 	// MainFile is the absolute path of the go project's main file source.
 	MainFile string
 	Args     []string
-	Matcher  MatcherFunc
+
+	// Watcher accepts subdirectories by the watcher
+	// executes before the watcher starts,
+	// if return true, then this (absolute) subdirectory is watched by watcher
+	// the default accepts all subdirectories but ignores the ".git", "node_modules" and "vendor"
+	Watcher MatcherFunc
+
+	Matcher MatcherFunc
 	// OnChange call something when this project's source code has changed and rizla going to reload
-	OnChange func()
+	OnChange func(string)
 	// AllowReloadAfter skip reload on file changes that made too fast from the last reload
-	// minimum duration is 1 second.
+	// minimum allowed duration is 3 seconds.
 	AllowReloadAfter time.Duration
-	dir              string
-	// subdirs contains all dir from the directory
-	subdirs []string
+
+	// DisableRuntimeDir set to true to disable adding subdirectories into the watcher, when a folder created at runtime
+	// defaults to false
+	DisableRuntimeDir bool
+
+	dir string
 	// proc the system Process of a running instance (if any)
 	proc *os.Process
 	// when the last change was made
 	lastChange time.Time
-	// Used only on windows, winEvtCount ever this is not an odd  number then the event is valid
-	winEvtCount int
 }
 
 // NewProject returns a simple project iteral which doesn't needs argument parameters
@@ -48,37 +63,19 @@ type Project struct {
 //
 // You can change all of its fields before the .Run function.
 func NewProject(mainfile string) *Project {
-	return &Project{MainFile: mainfile}
-}
-
-func (p *Project) prepare() {
-	if p.Matcher == nil {
-		p.Matcher = DefaultGoMatcher
+	if mainfile == "" {
+		mainfile = "main.go"
 	}
+	mainfile, _ = filepath.Abs(mainfile)
 
-	if p.AllowReloadAfter < minimumAllowReloadAfter {
-		p.AllowReloadAfter = minimumAllowReloadAfter
+	dir := filepath.Dir(mainfile)
+
+	return &Project{
+		MainFile:         mainfile,
+		Watcher:          DefaultWatcher,
+		Matcher:          DefaultGoMatcher,
+		AllowReloadAfter: minimumAllowReloadAfter,
+		dir:              dir,
+		lastChange:       time.Now(),
 	}
-
-	if p.MainFile == "" {
-		p.MainFile = "main.go"
-	}
-	if !filepath.IsAbs(p.MainFile) {
-		p.MainFile, _ = filepath.Abs(p.MainFile)
-	}
-
-	p.dir = filepath.Dir(p.MainFile)
-
-	subfiles, err := ioutil.ReadDir(p.dir)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, subfile := range subfiles {
-		if subfile.IsDir() {
-			path := p.dir + pathSeparator + subfile.Name()
-			p.subdirs = append(p.subdirs, path)
-		}
-	}
-
 }

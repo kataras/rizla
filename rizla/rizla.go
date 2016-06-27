@@ -4,6 +4,7 @@ package rizla
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
@@ -35,7 +36,6 @@ var (
 // Add project(s) to the container
 func Add(proj ...*Project) {
 	for _, p := range proj {
-		p.prepare()
 		projects = append(projects, p)
 	}
 }
@@ -53,7 +53,7 @@ func Len() int {
 var (
 	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant\n")
 	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues\n")
-	errBuild       = errors.New("Failed to build the program. Trace: %s\n")
+	errBuild       = errors.New("Failed to build the program.\n")
 	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
 )
 
@@ -97,39 +97,54 @@ func Run(sources ...string) {
 
 	for _, p := range projects {
 
-		// go build
-		err := buildProject(p)
-		if err != nil {
-			dangerf(errBuild.Format(err.Error()).Error())
-			continue
-		}
+		// add to the watcher first in order to watch changes and re-builds if the first build has fallen
 
-		// exec run the builded program
-		err = runProject(p)
-		if err != nil {
-			dangerf(errRun.Format(err.Error()).Error())
-			continue
-		}
-
-		// add to the watcher
-		// add its root folder
+		// add its root folder first
 		if werr = watcher.Add(p.dir); werr != nil {
 			dangerf("\n" + werr.Error() + "\n")
 		}
 
-		// add subdirs also
-		for _, subdir := range p.subdirs {
-			if werr = watcher.Add(subdir); werr != nil {
-				dangerf("\n" + werr.Error() + "\n")
+		visitFn := func(path string, f os.FileInfo, err error) error {
+			if f.IsDir() {
+				// check if this subdir is allowed
+				if p.Watcher(path) {
+					if werr = watcher.Add(path); werr != nil {
+						dangerf("\n" + werr.Error() + "\n")
+					}
+				} else {
+					return filepath.SkipDir
+				}
+
 			}
+			return nil
+		}
+
+		if err := filepath.Walk(p.dir, visitFn); err != nil {
+			panic(err)
+		}
+
+		// go build
+		if err := buildProject(p); err != nil {
+			dangerf(errBuild.Error())
+			continue
+		}
+
+		// exec run the builded program
+		if err := runProject(p); err != nil {
+			dangerf(errRun.Error())
+			continue
 		}
 
 	}
 	hasStoppedManually := false
 
-	// if something bad happens and program exits, show an unexpecter error message
 	defer func() {
+		watcher.Close()
+		for _, p := range projects {
+			killProcess(p.proc)
+		}
 		if !hasStoppedManually {
+			// if something bad happens and program exits, show an unexpected error message
 			dangerf(errUnexpected.Error())
 		}
 	}()
@@ -141,63 +156,66 @@ func Run(sources ...string) {
 		select {
 		case stop := <-stopChan:
 			if stop {
-				for _, p := range projects {
-					killProcess(p.proc)
-				}
 				hasStoppedManually = true
-				watcher.Close()
 				return
 			}
 
 		case event := <-watcher.Events:
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				filename := event.Name
+			filename := event.Name
+			for _, p := range projects {
+				go func() {
 
-				for _, p := range projects {
-					//this is received two times, the last time is the real changed file (at least on windows(?)), so
-					p.winEvtCount++
 					if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
+						p.lastChange = time.Now()
 
-						if p.winEvtCount%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
-							if p.Matcher(filename) {
-								// call the user defined change callback
-								if p.OnChange != nil {
-									p.OnChange()
-								}
+						isDir := false
+						match := p.Matcher(filename)
+						if !p.DisableRuntimeDir { //we don't check if !match because the folder maybe be: myfolder.go
+							isDir = isDirectory(filename)
+						}
 
-								fromproject := ""
-								if p.Name != "" {
-									fromproject = "From project '" + p.Name + "': "
+						if match || isDir && p.Watcher(filename) {
+							if isDir {
+								if werr = watcher.Add(filename); werr != nil {
+									dangerf("\n" + werr.Error() + "\n")
 								}
-								infof("\n%sA change has been detected, reloading now...", fromproject)
-								p.lastChange = time.Now()
-								// kill previous running instance
-								err := killProcess(p.proc)
-								if err != nil {
-									dangerf(err.Error())
-									continue
-								}
-								// go build
-								err = buildProject(p)
-								if err != nil {
-									dangerf(errBuild.Format(err.Error()).Error())
-									continue
-								}
+							}
 
-								// exec run the builded program
-								err = runProject(p)
-								if err != nil {
-									dangerf(errRun.Format(err.Error()).Error())
-									continue
-								}
-								successf("ready!\n")
+							fromproject := ""
+							if p.Name != "" {
+								fromproject = "From project '" + p.Name + "': "
+							}
+							infof("\n%sA change has been detected, reloading now...", fromproject)
 
+							// kill previous running instance
+							err := killProcess(p.proc)
+							if err != nil {
+								dangerf(err.Error())
+								return
+							}
+							// go build
+							err = buildProject(p)
+							if err != nil {
+								dangerf(errBuild.Error())
+								return
+							}
+
+							// exec run the builded program
+							err = runProject(p)
+							if err != nil {
+								dangerf(errRun.Format(err.Error()).Error())
+								return
+							}
+							successf("ready!\n")
+
+							// call the user defined change callback
+							if p.OnChange != nil {
+								p.OnChange(filename)
 							}
 
 						}
 					}
-				}
-
+				}()
 			}
 		case err := <-watcher.Errors:
 			if !hasStoppedManually {
@@ -211,6 +229,13 @@ func Run(sources ...string) {
 // Stop any projects are watched by the Run method, this function should be call when you call the Run inside a goroutine.
 func Stop() {
 	stopChan <- true
+}
+
+func isDirectory(fullname string) bool {
+	if info, err := os.Stat(fullname); err == nil && info.IsDir() {
+		return true
+	}
+	return false
 }
 
 func buildProject(p *Project) error {

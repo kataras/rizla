@@ -6,7 +6,7 @@ Rizla builds, runs and monitors your Go Applications with ease.
 [Travis]: http://travis-ci.org/kataras/rizla
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v0.0.1-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v0.0.2-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
 [Gitter]: https://gitter.im/kataras/rizla
@@ -67,15 +67,24 @@ func main() {
   project.Name = "My super project"
   // Allow reload every 3 seconds or more no less
   project.AllowReloadAfter = time.Duration(3) * time.Second
-  // Custom file matcher
+
+  // Custom subdirectory matcher, for the watcher, return true to include this folder to the watcher
+  // the default adds all subdirectories to the watcher, except ".git", "node_modules", "vendor"
+  //
+  // NOTE: This also executes on runtime if a new folder added, so you calculate and possible 'future' subdirectories.
+  project.Watcher = func(absolutePath string) bool {
+     return absolutePath != "THIS_SUBDIRECTORY_SHOULD_BE_IGNORED_FROM_THE_WATCHER"
+  }
+
+  // Custom file matcher on runtime (file change), return true to reload when a file with this name changed
   project.Matcher = func(filename string) bool {
 	 return filename == "I_want_to_reload_only_when_this_file_changed.go"
   }
   // Add arguments, these will be used from the executable file
   project.Args = []string{"-myargument","the value","-otherargument","a value"}
   // Set custom callback when a change to this project is happening
-  project.OnChange = func() {
-    println("my project's source code has been changed, the rizla will care take of the app reloading!!!!!'")
+  project.OnChange = func(name string) {
+    println("my project's source code "+name+" has been changed, the rizla will care take of the app reloading!!!!!'")
   }
 
   // End of optional
@@ -119,8 +128,9 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.1**
+Current: **v0.0.2**
 
+[HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
 Read more about Semantic Versioning 2.0.0
 

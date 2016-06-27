@@ -30,7 +30,6 @@ func TestProjectMatcher(t *testing.T) {
 
 func TestProjectPrepare(t *testing.T) {
 	p := NewProject("project_test.go")
-	p.prepare()
 
 	if p.Matcher == nil {
 		t.Fatal("Matcher is nil, not defaulted")
@@ -43,10 +42,6 @@ func TestProjectPrepare(t *testing.T) {
 
 	if p.dir != filepath.Dir(mainfile) {
 		t.Fatalf("Dir is not the correct, expected %s but got %s", filepath.Dir(mainfile), p.dir)
-	}
-
-	if len(p.subdirs) > 0 {
-		t.Fatal("Subdirectories are greather than zero, but we don't have any subdirectories")
 	}
 
 }

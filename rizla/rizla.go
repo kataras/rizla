@@ -146,8 +146,7 @@ func Run(sources ...string) {
 				}
 				hasStoppedManually = true
 				watcher.Close()
-
-				break
+				return
 			}
 
 		case event := <-watcher.Events:
@@ -204,7 +203,6 @@ func Run(sources ...string) {
 			if !hasStoppedManually {
 				dangerf(err.Error())
 			}
-
 		}
 	}
 

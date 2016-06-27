@@ -59,7 +59,6 @@ func main() {
 		p := rizla.NewProject(a)
 		rizla.Add(p)
 	}
-
 	rizla.Run()
 }
 

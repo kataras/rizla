@@ -2,4 +2,6 @@
 .settings
 .vscode/*
 .atom-build.json
-.depon.exe
+*.exe
+*.txt
+rizla/rizla_test.go

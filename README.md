@@ -1,17 +1,17 @@
-Rizla builds, runs and monitors your Go Applications with ease.
+Depon builds, runs and monitors your Go Applications with ease.
 
 [![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Gitter Widget]][Gitter]
 
-[Travis Widget]: https://img.shields.io/travis/kataras/rizla.svg?style=flat-square
-[Travis]: http://travis-ci.org/kataras/rizla
+[Travis Widget]: https://img.shields.io/travis/kataras/depon.svg?style=flat-square
+[Travis]: http://travis-ci.org/kataras/depon
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
-[License]: https://github.com/kataras/rizla/blob/master/LICENSE
+[License]: https://github.com/kataras/depon/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-v0.0.1-blue.svg?style=flat-square
-[Release]: https://github.com/kataras/rizla/releases
+[Release]: https://github.com/kataras/depon/releases
 [Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
-[Gitter]: https://gitter.im/kataras/rizla
+[Gitter]: https://gitter.im/kataras/depon
 [Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
-[Report]: http://goreportcard.com/report/kataras/rizla
+[Report]: http://goreportcard.com/report/kataras/depon
 [Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
 [Language]: http://golang.org
 [Platform Widget]: https://img.shields.io/badge/platform-Any--OS-gray.svg?style=flat-square
@@ -19,8 +19,8 @@ Rizla builds, runs and monitors your Go Applications with ease.
 # Get Started
 
 ```bash
-$ rizla main.go #single project monitoring
-$ rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go #multi projects monitoring
+$ depon main.go #single project monitoring
+$ depon C:/myprojects/project1/main.go C:/myprojects/project2/main.go #multi projects monitoring
 ```
 
 Want to use it from your project's source code? easy
@@ -31,12 +31,12 @@ $ cat from_code_simple.go
 package main
 
 import (
-	"github.com/kataras/rizla/rizla"
+	"github.com/kataras/depon/depon"
 )
 
 func main() {
   // Build, run & start monitoring the projects
-  rizla.Run("C:/iris-project/main.go", "C:/otherproject/main.go")
+  depon.Run("C:/iris-project/main.go", "C:/otherproject/main.go")
 }
 ```
 
@@ -47,7 +47,7 @@ $ cat from_code_pro.go
 package main
 
 import (
-	"github.com/kataras/rizla/rizla"
+	"github.com/kataras/depon/depon"
 	"time"
 	"os"
 )
@@ -55,11 +55,11 @@ import (
 func main() {
   // Optional, set the messages/logs output destination of our application,
   // let's set them to their defaults
-  rizla.Out = os.Stdout
-  rizla.Err = os.Stderr
+  depon.Out = os.Stdout
+  depon.Err = os.Stderr
 
   // Create a new project by the main source file
-  project := rizla.NewProject("C:/myproject/main.go")
+  project := depon.NewProject("C:/myproject/main.go")
 
   // The below are optional
 
@@ -76,10 +76,10 @@ func main() {
 
   // End of optional
 
-  // Add the project to the rizla container
-  rizla.Add(project)
+  // Add the project to the depon container
+  depon.Add(project)
   //  Build, run & start monitoring the project(s)
-  rizla.Run()
+  depon.Run()
 }
 ```
 
@@ -90,11 +90,11 @@ Installation
 ------------
 The only requirement is the [Go Programming Language](https://golang.org/dl)
 
-`$ go get -u github.com/kataras/rizla`
+`$ go get -u github.com/kataras/depon`
 
 FAQ
 ------------
-You can find answers by exploring [these questions](https://github.com/kataras/rizla/issues?q=label%3Aquestion).
+You can find answers by exploring [these questions](https://github.com/kataras/depon/issues?q=label%3Aquestion).
 
 
 Features
@@ -102,14 +102,14 @@ Features
 - Super easy - is created for everyone.
 - You can use it either as command line tool either as part of your project's source code!
 - Multi-Monitoring - Supports monitoring of unlimited projects
-- No forever loops with filepath.Walk, Rizla uses the Operating System's signals to fire a reload.
+- No forever loops with filepath.Walk, Depon uses the Operating System's signals to fire a reload.
 
 
 People
 ------------
-If you'd like to discuss this package, or ask questions about it, feel free to [Chat]( https://gitter.im/kataras/rizla).
+If you'd like to discuss this package, or ask questions about it, feel free to [Chat]( https://gitter.im/kataras/depon).
 
-The author of rizla is [@kataras](https://github.com/kataras).
+The author of depon is [@kataras](https://github.com/kataras).
 
 
 Versioning

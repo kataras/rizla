@@ -1,7 +1,7 @@
-//Package main Rizla builds, runs and monitors your Go Applications with ease.
+//Package main depon builds, runs and monitors your Go Applications with ease.
 //
-//   rizla main.go
-//   rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
+//   depon main.go
+//   depon C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
 //
 package main
 
@@ -12,24 +12,24 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/kataras/rizla/rizla"
+	"github.com/kataras/depon/depon"
 )
 
 const (
-	// Version of Rizla command line tool
+	// Version of Depon command line tool
 	Version = "0.0.1"
-	// Name of Rizla
-	Name = "Rizla"
-	// Description of Rizla
-	Description = "Rizla builds, runs and monitors your Go Applications with ease."
+	// Name of Depon
+	Name = "Depon"
+	// Description of Depon
+	Description = "Depon builds, runs and monitors your Go Applications with ease."
 )
 
 var helpTmpl = fmt.Sprintf(`NAME:
    %s - %s
 
 USAGE:
-   rizla main.go
-   rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
+   depon main.go
+   depon C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
 
 VERSION:
    %s
@@ -56,11 +56,11 @@ func main() {
 	}
 
 	for _, a := range args {
-		p := rizla.NewProject(a)
-		rizla.Add(p)
+		p := depon.NewProject(a)
+		depon.Add(p)
 	}
 
-	rizla.Run()
+	depon.Run()
 }
 
 func help(code int) {

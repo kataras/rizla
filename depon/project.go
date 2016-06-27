@@ -1,4 +1,4 @@
-package rizla
+package depon
 
 import (
 	"io/ioutil"

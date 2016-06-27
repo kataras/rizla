@@ -1,4 +1,4 @@
-package rizla
+package depon
 
 import (
 	"path/filepath"
@@ -22,7 +22,7 @@ func TestProjectMatcher(t *testing.T) {
 	}
 	for k, v := range files {
 		if gotV := DefaultGoMatcher(k); gotV != v {
-			t.Fatalf("Matcher, expected %#v but got %#v", v, gotV)
+			t.Fatalf("Matcher, expected %#v but got %#v for filename %s", v, gotV, k)
 		}
 	}
 }

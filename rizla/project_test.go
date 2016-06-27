@@ -15,8 +15,9 @@ func TestProjectMatcher(t *testing.T) {
 		"323232.go":                             true,
 		"-myfile2.go":                           true,
 		"_____.go":                              true,
-		".god":                                  false,
-		".goo":                                  false,
+		".gooutput":                             !isWindows, // on non-windows the event is .gooutputblablabla, so we check for '.go'
+		".god":                                  !isWindows,
+		".goo":                                  !isWindows,
 		".go.dgo":                               !isWindows,
 		"":                                      false,
 	}

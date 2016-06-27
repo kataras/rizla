@@ -53,9 +53,13 @@ var (
 	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues\n")
 	errBuild       = errors.New("Failed to build the program. Trace: %s\n")
 	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
-
-	printer = color.New()
 )
+
+// newPrinter returns a new colorable printer
+func newPrinter() *color.Color {
+	color.Output = colorable.NewColorable(Out)
+	return color.New()
+}
 
 // Run starts the repeat of the build-run-watch-reload task of all projects
 // receives optional parameters which can be the main source file of the project(s) you want to add, they can work nice with .Add(project) also, so dont worry use it.
@@ -66,7 +70,22 @@ func Run(sources ...string) {
 		}
 	}
 
-	color.Output = colorable.NewColorable(Out)
+	printer := newPrinter()
+
+	dangerf := func(format string, a ...interface{}) {
+		printer.Add(color.FgRed)
+		printer.Printf(format, a...)
+	}
+
+	infof := func(format string, a ...interface{}) {
+		printer.Add(color.FgCyan)
+		printer.Printf(format, a...)
+	}
+
+	successf := func(format string, a ...interface{}) {
+		printer.Add(color.FgGreen)
+		printer.Printf(format, a...)
+	}
 
 	watcher, werr := fsnotify.NewWatcher()
 	if werr != nil {
@@ -215,19 +234,4 @@ func killProcess(proc *os.Process) (err error) {
 		}
 	}
 	return
-}
-
-func dangerf(format string, a ...interface{}) {
-	printer.Add(color.FgRed)
-	printer.Printf(format, a...)
-}
-
-func infof(format string, a ...interface{}) {
-	printer.Add(color.FgCyan)
-	printer.Printf(format, a...)
-}
-
-func successf(format string, a ...interface{}) {
-	printer.Add(color.FgGreen)
-	printer.Printf(format, a...)
 }

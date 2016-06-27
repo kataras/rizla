@@ -5,12 +5,6 @@ go:
     - tip
 
 script:
-  - GOOS=linux go build
-  - GOOS=darwin go build
-  - GOOS=freebsd go build
-  - GOOS=windows go build
-  - GOARCH=386 go build
-
   - go test -v ./...
 
 after_success:

@@ -1,5 +1,5 @@
-//Package depon contains the source code of the depon project
-package depon
+//Package rizla contains the source code of the rizla project
+package rizla
 
 import (
 	"os"
@@ -50,7 +50,7 @@ func Len() int {
 
 var (
 	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant\n")
-	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/depon/issues\n")
+	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues\n")
 	errBuild       = errors.New("Failed to build the program. Trace: %s\n")
 	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
 )

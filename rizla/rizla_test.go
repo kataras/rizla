@@ -1,4 +1,4 @@
-package depon
+package rizla
 
 import (
 	"io"

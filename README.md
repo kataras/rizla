@@ -73,6 +73,10 @@ func main() {
   }
   // Add arguments, these will be used from the executable file
   project.Args = []string{"-myargument","the value","-otherargument","a value"}
+  // Set custom callback when a change to this project is happening
+  project.OnChange = func() {
+    println("my project's source code has been changed, the rizla will care take of the app reloading!!!!!'")
+  }
 
   // End of optional
 

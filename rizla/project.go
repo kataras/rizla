@@ -27,6 +27,8 @@ type Project struct {
 	MainFile string
 	Args     []string
 	Matcher  MatcherFunc
+	// OnChange call something when this project's source code has changed and rizla going to reload
+	OnChange func()
 	// AllowReloadAfter skip reload on file changes that made too fast from the last reload
 	// minimum duration is 1 second.
 	AllowReloadAfter time.Duration

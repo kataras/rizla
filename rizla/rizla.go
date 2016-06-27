@@ -28,6 +28,8 @@ var (
 	projects []*Project
 
 	pathSeparator = string(os.PathSeparator)
+
+	stopChan = make(chan bool, 1)
 )
 
 // Add project(s) to the container
@@ -114,6 +116,7 @@ func Run(sources ...string) {
 		if werr = watcher.Add(p.dir); werr != nil {
 			dangerf("\n" + werr.Error() + "\n")
 		}
+
 		// add subdirs also
 		for _, subdir := range p.subdirs {
 			if werr = watcher.Add(subdir); werr != nil {
@@ -122,15 +125,31 @@ func Run(sources ...string) {
 		}
 
 	}
+	hasStoppedManually := false
 
 	// if something bad happens and program exits, show an unexpecter error message
 	defer func() {
-		dangerf(errUnexpected.Error())
+		if !hasStoppedManually {
+			dangerf(errUnexpected.Error())
+		}
 	}()
+
+	stopChan <- false
 
 	// run the watcher
 	for {
 		select {
+		case stop := <-stopChan:
+			if stop {
+				for _, p := range projects {
+					killProcess(p.proc)
+				}
+				hasStoppedManually = true
+				watcher.Close()
+
+				break
+			}
+
 		case event := <-watcher.Events:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				filename := event.Name
@@ -142,6 +161,11 @@ func Run(sources ...string) {
 
 						if p.winEvtCount%2 == 0 || !isWindows { // this 'hack' works for windows & linux but I dont know if works for osx too, we can wait for issue reports here.
 							if p.Matcher(filename) {
+								// call the user defined change callback
+								if p.OnChange != nil {
+									p.OnChange()
+								}
+
 								fromproject := ""
 								if p.Name != "" {
 									fromproject = "From project '" + p.Name + "': "
@@ -177,10 +201,18 @@ func Run(sources ...string) {
 
 			}
 		case err := <-watcher.Errors:
-			dangerf(err.Error())
+			if !hasStoppedManually {
+				dangerf(err.Error())
+			}
+
 		}
 	}
 
+}
+
+// Stop any projects are watched by the Run method, this function should be call when you call the Run inside a goroutine.
+func Stop() {
+	stopChan <- true
 }
 
 func buildProject(p *Project) error {
@@ -233,5 +265,6 @@ func killProcess(proc *os.Process) (err error) {
 			err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
 		}
 	}
+	proc = nil
 	return
 }

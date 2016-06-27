@@ -17,7 +17,7 @@ func TestProjectMatcher(t *testing.T) {
 		"_____.go":                              true,
 		".god":                                  false,
 		".goo":                                  false,
-		".go.dgo":                               false,
+		".go.dgo":                               !isWindows,
 		"":                                      false,
 	}
 	for k, v := range files {

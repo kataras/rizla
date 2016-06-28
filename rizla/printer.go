@@ -3,7 +3,7 @@ package rizla
 import (
 	"os"
 
-	"github.com/fatih/color"
+	"github.com/iris-contrib/color"
 	"github.com/mattn/go-colorable"
 )
 
@@ -15,8 +15,7 @@ type Printer struct {
 
 // NewPrinter returns a new colorable printer
 func NewPrinter(out *os.File) *Printer {
-	color.Output = colorable.NewColorable(out)
-	c := color.New()
+	c := color.New(colorable.NewColorable(out))
 	return &Printer{
 		Color:  c,
 		stream: out,

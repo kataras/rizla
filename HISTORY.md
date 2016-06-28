@@ -1,3 +1,7 @@
+## 0.0.2 -> 0.0.3
+- Change: `rizla.Out & rizla.Err` moved to the Project iteral (`project.Out` & `project.Err`), each project can have its own output now, and are type of *Printer
+- Change/NEW: `project.OnChange` removed, new  `project.OnReload(func(string))` & `project.OnReloaded(func(string))` , with these you can change the output message when a file has changed and also when project reloaded, see the [project.go](https://github.com/kataras/rizla/blob/master/project.go) for more.
+
 ## 0.0.1 -> 0.0.2
 
 - A lot of underline code improvements & fixes

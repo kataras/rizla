@@ -26,6 +26,24 @@ func DefaultWatcher(abs string) bool {
 	return !(base == ".git" || base == "node_modules" || base == "vendor")
 }
 
+// DefaultOnReload fired when file has changed and reload going to happens
+func DefaultOnReload(p *Project) func(string) {
+	return func(string) {
+		fromproject := ""
+		if p.Name != "" {
+			fromproject = "From project '" + p.Name + "': "
+		}
+		p.Out.Infof("\n%sA change has been detected, reloading now...", fromproject)
+	}
+}
+
+// DefaultOnReloaded fired when reload has been finished
+func DefaultOnReloaded(p *Project) func(string) {
+	return func(string) {
+		p.Out.Successf("ready!\n")
+	}
+}
+
 // Project the struct which contains the necessary fields to watch and reload(rerun) a go project
 type Project struct {
 	// optional Name for the project
@@ -33,20 +51,25 @@ type Project struct {
 	// MainFile is the absolute path of the go project's main file source.
 	MainFile string
 	Args     []string
-
+	// The Output destination (sent by rizla and your program)
+	Out *Printer
+	// The Err Output destination (sent on rizla errors and your program's errors)
+	Err *Printer
 	// Watcher accepts subdirectories by the watcher
 	// executes before the watcher starts,
 	// if return true, then this (absolute) subdirectory is watched by watcher
 	// the default accepts all subdirectories but ignores the ".git", "node_modules" and "vendor"
 	Watcher MatcherFunc
-
 	Matcher MatcherFunc
-	// OnChange call something when this project's source code has changed and rizla going to reload
-	OnChange func(string)
 	// AllowReloadAfter skip reload on file changes that made too fast from the last reload
 	// minimum allowed duration is 3 seconds.
 	AllowReloadAfter time.Duration
-
+	// OnReload fires when when file has been changed and rizla is going to reload the project
+	// the parameter is the changed file name
+	OnReload func(string)
+	// OnReloaded fires when rizla finish with the reload
+	// the parameter is the changed file name
+	OnReloaded func(string)
 	// DisableRuntimeDir set to true to disable adding subdirectories into the watcher, when a folder created at runtime
 	// defaults to false
 	DisableRuntimeDir bool
@@ -70,12 +93,18 @@ func NewProject(mainfile string) *Project {
 
 	dir := filepath.Dir(mainfile)
 
-	return &Project{
+	p := &Project{
 		MainFile:         mainfile,
+		Out:              NewPrinter(os.Stdout),
+		Err:              NewPrinter(os.Stderr),
 		Watcher:          DefaultWatcher,
 		Matcher:          DefaultGoMatcher,
 		AllowReloadAfter: minimumAllowReloadAfter,
 		dir:              dir,
 		lastChange:       time.Now(),
 	}
+
+	p.OnReload = DefaultOnReload(p)
+	p.OnReloaded = DefaultOnReloaded(p)
+	return p
 }

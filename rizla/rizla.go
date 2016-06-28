@@ -9,10 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/fsnotify/fsnotify"
 	"github.com/iris-contrib/errors"
-	"github.com/mattn/go-colorable"
 )
 
 const (
@@ -21,10 +19,9 @@ const (
 )
 
 var (
-	// Out The logger output for all projects
-	Out = os.Stdout
-	// Err The logger output for errors for all projects
-	Err = os.Stderr
+	// Out The Printer output for watcher errors
+	// set this by rizla.NewPrinter(*os.File)
+	Out = NewPrinter(os.Stdout)
 
 	projects []*Project
 
@@ -57,12 +54,6 @@ var (
 	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
 )
 
-// newPrinter returns a new colorable printer
-func newPrinter() *color.Color {
-	color.Output = colorable.NewColorable(Out)
-	return color.New()
-}
-
 // Run starts the repeat of the build-run-watch-reload task of all projects
 // receives optional parameters which can be the main source file of the project(s) you want to add, they can work nice with .Add(project) also, so dont worry use it.
 func Run(sources ...string) {
@@ -72,27 +63,9 @@ func Run(sources ...string) {
 		}
 	}
 
-	printer := newPrinter()
-
-	dangerf := func(format string, a ...interface{}) {
-		printer.Add(color.FgRed)
-		printer.Printf(format, a...)
-	}
-
-	infof := func(format string, a ...interface{}) {
-		printer.Add(color.FgCyan)
-		printer.Printf(format, a...)
-	}
-
-	successf := func(format string, a ...interface{}) {
-		printer.Add(color.FgGreen)
-		printer.Printf(format, a...)
-	}
-
 	watcher, werr := fsnotify.NewWatcher()
 	if werr != nil {
-		dangerf(werr.Error())
-		return
+		panic(werr)
 	}
 
 	for _, p := range projects {
@@ -101,7 +74,7 @@ func Run(sources ...string) {
 
 		// add its root folder first
 		if werr = watcher.Add(p.dir); werr != nil {
-			dangerf("\n" + werr.Error() + "\n")
+			p.Err.Dangerf("\n" + werr.Error() + "\n")
 		}
 
 		visitFn := func(path string, f os.FileInfo, err error) error {
@@ -109,7 +82,7 @@ func Run(sources ...string) {
 				// check if this subdir is allowed
 				if p.Watcher(path) {
 					if werr = watcher.Add(path); werr != nil {
-						dangerf("\n" + werr.Error() + "\n")
+						p.Err.Dangerf("\n" + werr.Error() + "\n")
 					}
 				} else {
 					return filepath.SkipDir
@@ -125,13 +98,13 @@ func Run(sources ...string) {
 
 		// go build
 		if err := buildProject(p); err != nil {
-			dangerf(errBuild.Error())
+			p.Err.Dangerf(errBuild.Error())
 			continue
 		}
 
 		// exec run the builded program
 		if err := runProject(p); err != nil {
-			dangerf(errRun.Error())
+			p.Err.Dangerf(errRun.Error())
 			continue
 		}
 
@@ -145,7 +118,7 @@ func Run(sources ...string) {
 		}
 		if !hasStoppedManually {
 			// if something bad happens and program exits, show an unexpected error message
-			dangerf(errUnexpected.Error())
+			Out.Dangerf(errUnexpected.Error())
 		}
 	}()
 
@@ -177,41 +150,33 @@ func Run(sources ...string) {
 						if match || isDir && p.Watcher(filename) {
 							if isDir {
 								if werr = watcher.Add(filename); werr != nil {
-									dangerf("\n" + werr.Error() + "\n")
+									p.Err.Dangerf("\n" + werr.Error() + "\n")
 								}
 							}
 
-							fromproject := ""
-							if p.Name != "" {
-								fromproject = "From project '" + p.Name + "': "
-							}
-							infof("\n%sA change has been detected, reloading now...", fromproject)
+							p.OnReload(filename)
 
 							// kill previous running instance
 							err := killProcess(p.proc)
 							if err != nil {
-								dangerf(err.Error())
+								p.Err.Dangerf(err.Error())
 								return
 							}
 							// go build
 							err = buildProject(p)
 							if err != nil {
-								dangerf(errBuild.Error())
+								p.Err.Dangerf(errBuild.Error())
 								return
 							}
 
 							// exec run the builded program
 							err = runProject(p)
 							if err != nil {
-								dangerf(errRun.Format(err.Error()).Error())
+								p.Err.Dangerf(errRun.Format(err.Error()).Error())
 								return
 							}
-							successf("ready!\n")
 
-							// call the user defined change callback
-							if p.OnChange != nil {
-								p.OnChange(filename)
-							}
+							p.OnReloaded(filename)
 
 						}
 					}
@@ -219,7 +184,7 @@ func Run(sources ...string) {
 			}
 		case err := <-watcher.Errors:
 			if !hasStoppedManually {
-				dangerf(err.Error())
+				Out.Dangerf("\n" + err.Error())
 			}
 		}
 	}
@@ -242,8 +207,8 @@ func buildProject(p *Project) error {
 	relative := p.MainFile[len(p.dir)+1:len(p.MainFile)-3] + goExt
 	goBuild := exec.Command("go", "build", relative)
 	goBuild.Dir = p.dir
-	goBuild.Stdout = Out
-	goBuild.Stderr = Err
+	goBuild.Stdout = p.Out.stream
+	goBuild.Stderr = p.Err.stream
 	if err := goBuild.Run(); err != nil {
 		return err
 	}
@@ -259,8 +224,8 @@ func runProject(p *Project) error {
 
 	runCmd := exec.Command("." + buildProject)
 	runCmd.Dir = p.dir
-	runCmd.Stdout = Out
-	runCmd.Stderr = Err
+	runCmd.Stdout = p.Out.stream
+	runCmd.Stderr = p.Err.stream
 
 	if p.Args != nil && len(p.Args) > 0 {
 		runCmd.Args = p.Args[0 : len(p.Args)-1]

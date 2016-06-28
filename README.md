@@ -1,6 +1,6 @@
 Rizla builds, runs and monitors your Go Applications with ease.
 
-[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Gitter Widget]][Gitter]
+[![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat]
 
 [Travis Widget]: https://img.shields.io/travis/kataras/rizla.svg?style=flat-square
 [Travis]: http://travis-ci.org/kataras/rizla
@@ -8,8 +8,8 @@ Rizla builds, runs and monitors your Go Applications with ease.
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
 [Release Widget]: https://img.shields.io/badge/release-v0.0.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
-[Gitter Widget]: https://img.shields.io/badge/chat-on%20gitter-00BCD4.svg?style=flat-square
-[Gitter]: https://gitter.im/kataras/rizla
+[Chat Widget]: https://img.shields.io/badge/Rocket.Chat-JOIN%20CHAT-00BCD4.svg?style=flat-square
+[Chat]: https://kataras.rocket.chat/channel/rizla
 [Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square
 [Report]: http://goreportcard.com/report/kataras/rizla
 [Language Widget]: https://img.shields.io/badge/powered_by-Go-3362c2.svg?style=flat-square
@@ -119,7 +119,7 @@ The only requirement is the [Go Programming Language](https://golang.org/dl)
 
 FAQ
 ------------
-Ask questions and get real-time answer from the [Chat](https://gitter.im/kataras/rizla).
+Ask questions and get real-time answer from the [Chat][CHAT].
 
 
 Features
@@ -132,7 +132,7 @@ Features
 
 People
 ------------
-If you'd like to discuss this package, or ask questions about it, feel free to [Chat]( https://gitter.im/kataras/rizla).
+If you'd like to discuss this package, or ask questions about it, feel free to [Chat][CHAT].
 
 The author of rizla is [@kataras](https://github.com/kataras).
 

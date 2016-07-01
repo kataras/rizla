@@ -4,4 +4,4 @@
 .atom-build.json
 *.exe
 *.txt
-./rizla/rizla_test.go
+*/rizla_test.go

@@ -163,7 +163,7 @@ License can be found [here](LICENSE).
 [Release Widget]: https://img.shields.io/badge/release-v0.0.3-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
-[Chat]: https://gitter.im/kataras/rizla
+[Chat]: https://kataras.rocket.chat/channel/rizla
 [ChatMain]: https://kataras.rocket.chat/channel/rizla
 [ChatAlternative]: https://gitter.im/kataras/rizla
 [Report Widget]: https://img.shields.io/badge/report%20card-A%2B-F44336.svg?style=flat-square

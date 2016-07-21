@@ -10,6 +10,11 @@ import (
 
 const minimumAllowReloadAfter = time.Duration(3) * time.Second
 
+// DefaultDisableProgramRerunOutput a long name but, it disables the output of the program's 'messages' after the first successfully run for each of the projects
+// the project iteral can be override this value.
+// set to true to disable the program's output when reloads
+var DefaultDisableProgramRerunOutput = false
+
 // MatcherFunc returns whether the file should be watched for the reload
 type MatcherFunc func(string) bool
 
@@ -71,14 +76,20 @@ type Project struct {
 	// the parameter is the changed file name
 	OnReloaded func(string)
 	// DisableRuntimeDir set to true to disable adding subdirectories into the watcher, when a folder created at runtime
+	// set to true to disable the program's output when reloads
 	// defaults to false
 	DisableRuntimeDir bool
+	// DisableProgramRerunOutput a long name but, it disables the output of the program's 'messages' after the first successfully run
+	// defaults to false
+	DisableProgramRerunOutput bool
 
 	dir string
 	// proc the system Process of a running instance (if any)
 	proc *os.Process
 	// when the last change was made
 	lastChange time.Time
+	// i%2 ==0 if windows, then the reload is allowed
+	i int
 }
 
 // NewProject returns a simple project iteral which doesn't needs argument parameters
@@ -94,14 +105,15 @@ func NewProject(mainfile string) *Project {
 	dir := filepath.Dir(mainfile)
 
 	p := &Project{
-		MainFile:         mainfile,
-		Out:              NewPrinter(os.Stdout),
-		Err:              NewPrinter(os.Stderr),
-		Watcher:          DefaultWatcher,
-		Matcher:          DefaultGoMatcher,
-		AllowReloadAfter: minimumAllowReloadAfter,
-		dir:              dir,
-		lastChange:       time.Now(),
+		MainFile:                  mainfile,
+		Out:                       NewPrinter(os.Stdout),
+		Err:                       NewPrinter(os.Stderr),
+		Watcher:                   DefaultWatcher,
+		Matcher:                   DefaultGoMatcher,
+		AllowReloadAfter:          minimumAllowReloadAfter,
+		DisableProgramRerunOutput: DefaultDisableProgramRerunOutput,
+		dir:        dir,
+		lastChange: time.Now(),
 	}
 
 	p.OnReload = DefaultOnReload(p)

@@ -126,7 +126,7 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.3**
+Current: **v0.0.4**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
@@ -160,7 +160,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/rizla
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v0.0.3-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v0.0.4-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/rizla

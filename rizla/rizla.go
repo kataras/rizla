@@ -136,55 +136,59 @@ func Run(sources ...string) {
 		case event := <-watcher.Events:
 			filename := event.Name
 			for _, p := range projects {
-				go func() {
+				p.i++
+				// fix two-times reload on windows
+				if isWindows && p.i%2 != 0 {
+					continue
+				}
 
-					if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
-						p.lastChange = time.Now()
+				if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
+					p.lastChange = time.Now()
 
-						isDir := false
-						match := p.Matcher(filename)
-						if !p.DisableRuntimeDir { //we don't check if !match because the folder maybe be: myfolder.go
-							isDir = isDirectory(filename)
-						}
-
-						if match || isDir && p.Watcher(filename) {
-							if isDir {
-								if werr = watcher.Add(filename); werr != nil {
-									p.Err.Dangerf("\n" + werr.Error() + "\n")
-								}
-							}
-
-							p.OnReload(filename)
-
-							// kill previous running instance
-							err := killProcess(p.proc)
-							if err != nil {
-								p.Err.Dangerf(err.Error())
-								return
-							}
-							// go build
-							err = buildProject(p)
-							if err != nil {
-								p.Err.Dangerf(errBuild.Error())
-								return
-							}
-
-							// exec run the builded program
-							err = runProject(p)
-							if err != nil {
-								p.Err.Dangerf(errRun.Format(err.Error()).Error())
-								return
-							}
-
-							p.OnReloaded(filename)
-
-						}
+					isDir := false
+					match := p.Matcher(filename)
+					if !p.DisableRuntimeDir { //we don't check if !match because the folder maybe be: myfolder.go
+						isDir = isDirectory(filename)
 					}
-				}()
+
+					if match || isDir && p.Watcher(filename) {
+						if isDir {
+							if werr = watcher.Add(filename); werr != nil {
+								p.Err.Dangerf("\n" + werr.Error() + "\n")
+							}
+						}
+
+						p.OnReload(filename)
+
+						// kill previous running instance
+						err := killProcess(p.proc)
+						if err != nil {
+							p.Err.Dangerf(err.Error())
+							continue
+						}
+
+						// go build
+						err = buildProject(p)
+						if err != nil {
+							p.Err.Dangerf(errBuild.Error())
+							continue
+						}
+
+						// exec run the builded program
+						err = runProject(p)
+						if err != nil {
+							p.Err.Dangerf(errRun.Format(err.Error()).Error())
+							continue
+						}
+
+						p.OnReloaded(filename)
+
+					}
+				}
 			}
 		case err := <-watcher.Errors:
 			if !hasStoppedManually {
-				Out.Dangerf("\n" + err.Error())
+				Out.Dangerf("\n Error:" + err.Error())
 			}
 		}
 	}
@@ -224,7 +228,13 @@ func runProject(p *Project) error {
 
 	runCmd := exec.Command("." + buildProject)
 	runCmd.Dir = p.dir
-	runCmd.Stdout = p.Out.stream
+
+	if p.DisableProgramRerunOutput && p.i == 0 && p.proc == nil {
+		// if already ran once succesfuly, we don't need to printout the output of the program, because we will have big outputs if the program has banner (like Iris :))
+	} else {
+		runCmd.Stdout = p.Out.stream
+	}
+
 	runCmd.Stderr = p.Err.stream
 
 	if p.Args != nil && len(p.Args) > 0 {
@@ -241,6 +251,10 @@ func runProject(p *Project) error {
 func killProcess(proc *os.Process) (err error) {
 	if proc == nil {
 		return nil
+	}
+	err = proc.Release()
+	if err != nil {
+		return nil // to prevent throw an error if the proc is not yet started correctly (= previous build error)
 	}
 	err = proc.Kill()
 	if err == nil {

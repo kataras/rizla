@@ -229,7 +229,7 @@ func runProject(p *Project) error {
 	runCmd := exec.Command("." + buildProject)
 	runCmd.Dir = p.dir
 
-	if p.DisableProgramRerunOutput && p.i == 0 && p.proc == nil {
+	if p.DisableProgramRerunOutput && p.i > 0 && p.proc != nil {
 		// if already ran once succesfuly, we don't need to printout the output of the program, because we will have big outputs if the program has banner (like Iris :))
 	} else {
 		runCmd.Stdout = p.Out.stream

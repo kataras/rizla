@@ -126,7 +126,7 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.4**
+Current: **v0.0.5**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 

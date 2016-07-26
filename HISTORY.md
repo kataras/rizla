@@ -1,3 +1,7 @@
+## 0.0.4 -> 0.0.5
+
+- **Fix**: Reload more than one time on Mac
+
 ## 0.0.3 -> 0.0.4
 
 - **Added**: global `DefaultDisableProgramRerunOutput` and per-project `DisableProgramRerunOutput` option, to disable the program's output when reloads.

@@ -260,6 +260,11 @@ func killProcess(proc *os.Process) (err error) {
 	if err == nil {
 		_, err = proc.Wait()
 	} else {
+		// prevent kill error
+		if proc.Pid <= 0 {
+			return nil
+		}
+		
 		// force kill, sometimes proc.Kill or Signal(os.Kill) doesn't kills
 		if isWindows {
 			err = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(proc.Pid)).Run()

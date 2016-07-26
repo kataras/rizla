@@ -134,6 +134,11 @@ func Run(sources ...string) {
 			}
 
 		case event := <-watcher.Events:
+			// ignore CHMOD events
+			if event.Op & fsnotify.Chmod == fsnotify.Chmod {
+				continue
+			}
+			
 			filename := event.Name
 			for _, p := range projects {
 				p.i++
@@ -256,15 +261,13 @@ func killProcess(proc *os.Process) (err error) {
 	if err != nil {
 		return nil // to prevent throw an error if the proc is not yet started correctly (= previous build error)
 	}
+	if proc.Pid <= 0 {
+		return nil
+	}
 	err = proc.Kill()
 	if err == nil {
 		_, err = proc.Wait()
 	} else {
-		// prevent kill error
-		if proc.Pid <= 0 {
-			return nil
-		}
-		
 		// force kill, sometimes proc.Kill or Signal(os.Kill) doesn't kills
 		if isWindows {
 			err = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(proc.Pid)).Run()

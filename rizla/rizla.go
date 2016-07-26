@@ -134,6 +134,11 @@ func Run(sources ...string) {
 			}
 
 		case event := <-watcher.Events:
+			// ignore CHMOD events
+			if event.Op & fsnotify.Chmod == fsnotify.Chmod {
+				continue
+			}
+			
 			filename := event.Name
 			for _, p := range projects {
 				p.i++

@@ -261,9 +261,9 @@ func killProcess(proc *os.Process) (err error) {
 	if err != nil {
 		return nil // to prevent throw an error if the proc is not yet started correctly (= previous build error)
 	}
-	if proc.Pid <= 0 {
+	/*if proc.Pid <= 0 {
 		return nil
-	}
+	}*/
 	err = proc.Kill()
 	if err == nil {
 		_, err = proc.Wait()

@@ -15,6 +15,7 @@ import (
 
 const (
 	isWindows = runtime.GOOS == "windows"
+	isMac     = runtime.GOOS == "darwin"
 	goExt     = ".go"
 )
 
@@ -261,9 +262,9 @@ func killProcess(proc *os.Process) (err error) {
 	if err != nil {
 		return nil // to prevent throw an error if the proc is not yet started correctly (= previous build error)
 	}
-	/*if proc.Pid <= 0 {
+	if proc.Pid <= 0 {
 		return nil
-	}*/
+	}
 	err = proc.Kill()
 	if err == nil {
 		_, err = proc.Wait()
@@ -271,6 +272,8 @@ func killProcess(proc *os.Process) (err error) {
 		// force kill, sometimes proc.Kill or Signal(os.Kill) doesn't kills
 		if isWindows {
 			err = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(proc.Pid)).Run()
+		} else if isMac {
+			err = exec.Command("killall", "-KILL", strconv.Itoa(proc.Pid)).Run()
 		} else {
 			err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
 		}

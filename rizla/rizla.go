@@ -258,10 +258,14 @@ func killProcess(proc *os.Process) (err error) {
 	if proc == nil {
 		return nil
 	}
-	err = proc.Release()
-	if err != nil {
-		return nil // to prevent throw an error if the proc is not yet started correctly (= previous build error)
+
+	if !isMac {
+		err = proc.Release()
+		if err != nil {
+			return nil // to prevent throw an error if the proc is not yet started correctly (= previous build error)
+		}
 	}
+
 	if proc.Pid <= 0 {
 		return nil
 	}

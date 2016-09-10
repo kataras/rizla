@@ -103,22 +103,6 @@ The only requirement is the [Go Programming Language](https://golang.org/dl)
 
 `$ go get -u github.com/kataras/rizla`
 
-
-go-* packages
-------------
-
-| Name        | Description           
-| ------------------|:---------------------:|
-| [go-errors](https://github.com/kataras/go-errors)      | Error handling
-| [go-fs](https://github.com/kataras/go-fs)      | FileSystem utils and common net/http static files handlers  
-| [go-events](https://github.com/kataras/go-events) | EventEmmiter for Go
-| [go-websocket](https://github.com/kataras/go-errors) | A websocket server and ,optionally, client side lib  for Go
-| [go-ssh](https://github.com/kataras/go-ssh) | SSH Server, build ssh interfaces, remote commands and remote cli with ease
-| [go-gzipwriter](https://github.com/kataras/go-gzipwriter) | Write gzip data to a io.Writer
-| [go-mailer](https://github.com/kataras/go-mailer) | E-mail Sender, send rich mails with one call  
-| [Q](https://github.com/kataras/q) | HTTP2 Web Framework, 100% compatible with net/http
-| [Iris](https://github.com/kataras/iris) | The fastest web framework. Built on top of fasthttp
-
 FAQ
 ------------
 Ask questions and get real-time answer from the [Chat][CHAT].
@@ -142,7 +126,7 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.5**
+Current: **v0.0.6**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
@@ -176,7 +160,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/rizla
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v0.0.5-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v0.0.6-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/rizla

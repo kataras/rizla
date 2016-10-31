@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/iris-contrib/errors"
+	"github.com/kataras/go-errors"
 )
 
 const (

@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/kataras/rizla/rizla"
+	"gopkg.in/kataras/rizla.v0/rizla"
 )
 
 const (

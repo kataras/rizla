@@ -17,7 +17,7 @@ $ cat from_code_simple.go
 package main
 
 import (
-	"github.com/kataras/rizla/rizla"
+	"gopkg.in/kataras/rizla.v0/rizla"
 )
 
 func main() {
@@ -33,7 +33,7 @@ $ cat from_code_pro.go
 package main
 
 import (
-	"github.com/kataras/rizla/rizla"
+	"gopkg.in/kataras/rizla.v0/rizla"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -101,7 +101,7 @@ Installation
 ------------
 The only requirement is the [Go Programming Language](https://golang.org/dl)
 
-`$ go get -u github.com/kataras/rizla`
+`$ go get -u gopkg.in/kataras/rizla.v0`
 
 FAQ
 ------------

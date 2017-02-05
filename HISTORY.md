@@ -1,4 +1,22 @@
-## 0.0.4 -> 0.0.5
+## 0.0.6 -> 0.0.7
+
+Rizla uses the operating system's signals to fire a change because it is the fastest way and it consumes the minimal CPU.
+But as the [feature request](https://github.com/kataras/rizla/issues/6) explains, some IDEs overrides the Operating System's signals, so I needed to change the things a bit in order to allow
+looping-every-while and compare the file(s) with its modtime for new changes while in the same time keep the default as it's.
+
+- **NEW**: Add a common interface for file system watchers in order to accoblish select between two methods of scanning for file changes.
+    - file system's signals (default)
+    - `filepath.Walk` (using the `-walk` flag)
+
+### When to enable `-walk`?
+When the default method doesn't works for your IDE's save method.
+
+### How to enable `-walk`?
+- If you're command line user: `rizla -walk main.go` , just append the `-walk` flag.
+- If you use rizla behind your source code then use the `rizla.RunWith(rizla.WatcherFromFlag("-flag"))` instead of `rizla.Run()`.
+
+
+## 0.0.4 -> 0.0.5 and 0.0.6
 
 - **Fix**: Reload more than one time on Mac
 

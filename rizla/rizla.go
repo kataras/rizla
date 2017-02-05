@@ -4,12 +4,10 @@ package rizla
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/kataras/go-errors"
 )
 
@@ -29,6 +27,8 @@ var (
 	pathSeparator = string(os.PathSeparator)
 
 	stopChan = make(chan bool, 1)
+
+	fsWatcher Watcher
 )
 
 // Add project(s) to the container
@@ -55,48 +55,29 @@ var (
 	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
 )
 
-// Run starts the repeat of the build-run-watch-reload task of all projects
-// receives optional parameters which can be the main source file of the project(s) you want to add, they can work nice with .Add(project) also, so dont worry use it.
-func Run(sources ...string) {
+// RunWith starts the repeat of the build-run-watch-reload task of all projects
+// receives optional parameters which can be the main source file
+// of the project(s) you want to add, they can work nice with .Add(project) also, so dont worry use it.
+//
+// First receiver is the type of watcher
+// second (optional) parameter(s) are the directories of the projects.
+//    it's optional because they can be added with the .Add(NewProject) before the RunWith.
+//
+func RunWith(watcher Watcher, sources ...string) {
+	// Author's notes: Because rizla's Run is not allowed to be called more than once
+	// the whole package works as it is, so the watcher here
+	// is CHANGING THE UNEXPORTED PACKGE VARIABLE 'fsWatcher'.
+	// We don't export the 'fsWatcher' directly because this may cause issues
+	// if user tries to change it while it runs.
+	fsWatcher = watcher
+
 	if len(sources) > 0 {
 		for _, s := range sources {
 			Add(NewProject(s))
 		}
 	}
 
-	watcher, werr := fsnotify.NewWatcher()
-	if werr != nil {
-		panic(werr)
-	}
-
 	for _, p := range projects {
-
-		// add to the watcher first in order to watch changes and re-builds if the first build has fallen
-
-		// add its root folder first
-		if werr = watcher.Add(p.dir); werr != nil {
-			p.Err.Dangerf("\n" + werr.Error() + "\n")
-		}
-
-		visitFn := func(path string, f os.FileInfo, err error) error {
-			if f.IsDir() {
-				// check if this subdir is allowed
-				if p.Watcher(path) {
-					if werr = watcher.Add(path); werr != nil {
-						p.Err.Dangerf("\n" + werr.Error() + "\n")
-					}
-				} else {
-					return filepath.SkipDir
-				}
-
-			}
-			return nil
-		}
-
-		if err := filepath.Walk(p.dir, visitFn); err != nil {
-			panic(err)
-		}
-
 		// go build
 		if err := buildProject(p); err != nil {
 			p.Err.Dangerf(errBuild.Error())
@@ -110,100 +91,67 @@ func Run(sources ...string) {
 		}
 
 	}
-	hasStoppedManually := false
 
-	defer func() {
-		watcher.Close()
-		for _, p := range projects {
-			killProcess(p.proc)
-		}
-		if !hasStoppedManually {
-			// if something bad happens and program exits, show an unexpected error message
-			Out.Dangerf(errUnexpected.Error())
-		}
-	}()
+	watcher.OnError(func(err error) {
+		Out.Dangerf("\n Error:" + err.Error())
+	})
 
-	stopChan <- false
+	watcher.OnChange(func(p *Project, filename string) {
+		if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
+			p.lastChange = time.Now()
+			match := p.Matcher(filename)
 
-	// run the watcher
-	for {
-		select {
-		case stop := <-stopChan:
-			if stop {
-				hasStoppedManually = true
-				return
-			}
+			if match {
 
-		case event := <-watcher.Events:
-			// ignore CHMOD events
-			if event.Op&fsnotify.Chmod == fsnotify.Chmod {
-				continue
-			}
+				p.OnReload(filename)
 
-			filename := event.Name
-			for _, p := range projects {
-				p.i++
-				// fix two-times reload on windows
-				if isWindows && p.i%2 != 0 {
-					continue
+				// kill previous running instance
+				err := killProcess(p.proc)
+				if err != nil {
+					p.Err.Dangerf(err.Error())
+					return
 				}
 
-				if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
-					p.lastChange = time.Now()
-
-					isDir := false
-					match := p.Matcher(filename)
-					if !p.DisableRuntimeDir { //we don't check if !match because the folder maybe be: myfolder.go
-						isDir = isDirectory(filename)
-					}
-
-					if match || isDir && p.Watcher(filename) {
-						if isDir {
-							if werr = watcher.Add(filename); werr != nil {
-								p.Err.Dangerf("\n" + werr.Error() + "\n")
-							}
-						}
-
-						p.OnReload(filename)
-
-						// kill previous running instance
-						err := killProcess(p.proc)
-						if err != nil {
-							p.Err.Dangerf(err.Error())
-							continue
-						}
-
-						// go build
-						err = buildProject(p)
-						if err != nil {
-							p.Err.Dangerf(errBuild.Error())
-							continue
-						}
-
-						// exec run the builded program
-						err = runProject(p)
-						if err != nil {
-							p.Err.Dangerf(errRun.Format(err.Error()).Error())
-							continue
-						}
-
-						p.OnReloaded(filename)
-
-					}
+				// go build
+				err = buildProject(p)
+				if err != nil {
+					p.Err.Dangerf(errBuild.Error())
+					return
 				}
-			}
-		case err := <-watcher.Errors:
-			if !hasStoppedManually {
-				Out.Dangerf("\n Error:" + err.Error())
+
+				// exec run the builded program
+				err = runProject(p)
+				if err != nil {
+					p.Err.Dangerf(errRun.Format(err.Error()).Error())
+					return
+				}
+
+				p.OnReloaded(filename)
+
 			}
 		}
-	}
+	})
 
+	watcher.Loop()
 }
 
-// Stop any projects are watched by the Run method, this function should be call when you call the Run inside a goroutine.
+// Run same as RunWith but runs with the default file system watcher
+//  which is the fsnotify (watch over file system's signals) or the last used with RunWith.
+func Run(sources ...string) {
+	if fsWatcher != nil {
+		// if user already called RunWith before, the watcher is saved on the 'fsWatcher' variable,
+		// use that instead.
+		RunWith(fsWatcher, sources...)
+		return
+	}
+	RunWith(WatcherFromFlag(""), sources...)
+}
+
+// Stop any projects are watched by the RunWith/Run method, this function should be call when you call the Run inside a goroutine.
 func Stop() {
-	stopChan <- true
+	if fsWatcher != nil {
+		fsWatcher.Stop()
+	}
 }
 
 func isDirectory(fullname string) bool {

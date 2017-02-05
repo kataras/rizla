@@ -7,6 +7,7 @@ Rizla builds, runs and monitors your Go Applications with ease.
 ```bash
 $ rizla main.go #single project monitoring
 $ rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go #multi projects monitoring
+$ rizla -walk main.go #prepend '-walk' only when the default file changes scanning method doesn't works for you.
 ```
 
 Want to use it from your project's source code? easy
@@ -23,6 +24,7 @@ import (
 func main() {
   // Build, run & start monitoring the projects
   rizla.Run("C:/iris-project/main.go", "C:/otherproject/main.go")
+	// rizla.RunWith(rizla.WatcherFromFlag("-walk"), "./main.go")
 }
 ```
 
@@ -126,7 +128,7 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.6**
+Current: **v0.0.7**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
@@ -160,7 +162,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/rizla
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v0.0.6-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v0.0.7-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/rizla

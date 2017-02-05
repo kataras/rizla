@@ -28,7 +28,8 @@ func DefaultGoMatcher(fullname string) bool {
 // allows all subdirs except .git, node_modules and vendor
 func DefaultWatcher(abs string) bool {
 	base := filepath.Base(abs)
-	return !(base == ".git" || base == "node_modules" || base == "vendor")
+	// by-default ignore .git folder, node_modules, vendor and any hidden files.
+	return !(base == ".git" || base == "node_modules" || base == "vendor" || base == ".")
 }
 
 // DefaultOnReload fired when file has changed and reload going to happens

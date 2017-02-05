@@ -29,6 +29,7 @@ func newSignalWatcher() Watcher {
 
 	return &signalWatcher{
 		underline: watcher,
+		stopChan:  make(chan bool, 1),
 	}
 }
 

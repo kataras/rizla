@@ -34,10 +34,6 @@ func (w *walkWatcher) OnChange(evt WatcherChangeListener) {
 	w.changeListeners = append(w.changeListeners, evt)
 }
 
-func (w *walkWatcher) Add(name string) error {
-	return nil
-}
-
 func (w *walkWatcher) Stop() {
 	w.stopChan <- true
 }

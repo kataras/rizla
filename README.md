@@ -2,7 +2,16 @@ Rizla builds, runs and monitors your Go Applications with ease.
 
 [![Travis Widget]][Travis] [![Release Widget]][Release] [![Report Widget]][Report] [![License Widget]][License] [![Chat Widget]][Chat]
 
-# Get Started
+Installation
+------------
+The only requirement is the [Go Programming Language](https://golang.org/dl), at least 1.7.
+
+```sh
+$ go get -u github.com/kataras/rizla
+```
+
+
+# Getting Started
 
 ```bash
 $ rizla main.go #single project monitoring
@@ -43,8 +52,6 @@ import (
 )
 
 func main() {
-
-
   // Create a new project by the main source file
   project := rizla.NewProject("C:/myproject/main.go")
 
@@ -96,26 +103,21 @@ func main() {
 }
 ```
 
-
 > That's all!
 
-Installation
-------------
-The only requirement is the [Go Programming Language](https://golang.org/dl)
-
-`$ go get -u github.com/kataras/rizla`
 
 FAQ
 ------------
-Ask questions and get real-time answer from the [Chat][CHAT].
+Ask questions and get real-time answers from the [Chat][CHAT].
 
 
 Features
 ------------
 - Super easy - is created for everyone.
 - You can use it either as command line tool either as part of your project's source code!
-- Multi-Monitoring - Supports monitoring of unlimited projects
-- No forever loops with filepath.Walk, rizla uses the Operating System's signals to fire a reload.
+- Multi-Monitoring - Supports monitoring of unlimited projects.
+- Rizla, by-default, uses the operating system's signals to fire a change because it is the fastest way and it consumes the minimal CPU.
+   - You 're still able to change the watcher to use the `filepath.Walk` too with `-walk` flag.
 
 
 People

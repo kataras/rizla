@@ -56,7 +56,10 @@ type Project struct {
 	Name string
 	// MainFile is the absolute path of the go project's main file source.
 	MainFile string
-	Args     []string
+	// The application's name, usually is the MainFile withotu the extension.
+	// At the future we may provide a way for custom naming which will be used on the "go build -o" flag.
+	AppName string
+	Args    []string
 	// The Output destination (sent by rizla and your program)
 	Out *Printer
 	// The Err Output destination (sent on rizla errors and your program's errors)
@@ -101,12 +104,14 @@ func NewProject(mainfile string) *Project {
 	if mainfile == "" {
 		mainfile = "main.go"
 	}
+	appName := mainfile[0 : len(mainfile)-len(goExt)]
 	mainfile, _ = filepath.Abs(mainfile)
 
 	dir := filepath.Dir(mainfile)
 
 	p := &Project{
 		MainFile:                  mainfile,
+		AppName:                   appName,
 		Out:                       NewPrinter(os.Stdout),
 		Err:                       NewPrinter(os.Stderr),
 		Watcher:                   DefaultWatcher,

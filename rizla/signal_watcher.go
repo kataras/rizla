@@ -82,7 +82,7 @@ func (w *signalWatcher) Loop() {
 	defer func() {
 		w.underline.Close()
 		for _, p := range projects {
-			killProcess(p.proc)
+			killProcess(p.proc, p.AppName)
 		}
 		if !w.hasStoppedManually {
 			for i := range w.errListeners {

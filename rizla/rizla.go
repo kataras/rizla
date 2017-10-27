@@ -49,10 +49,10 @@ func Len() int {
 }
 
 var (
-	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant\n")
-	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues\n")
-	errBuild       = errors.New("Failed to build the program.\n")
-	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
+	errInvalidArgs = errors.New("invalid arguments [%s], type -h to get assistant")
+	errUnexpected  = errors.New("unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues")
+	errBuild       = errors.New("failed to build the program")
+	errRun         = errors.New("failed to run the the program. Trace: %s")
 )
 
 // RunWith starts the repeat of the build-run-watch-reload task of all projects
@@ -93,7 +93,7 @@ func RunWith(watcher Watcher, sources ...string) {
 	}
 
 	watcher.OnError(func(err error) {
-		Out.Dangerf("\n Error:" + err.Error())
+		Out.Dangerf("\nError:" + err.Error())
 	})
 
 	watcher.OnChange(func(p *Project, filename string) {
@@ -106,7 +106,7 @@ func RunWith(watcher Watcher, sources ...string) {
 				p.OnReload(filename)
 
 				// kill previous running instance
-				err := killProcess(p.proc)
+				err := killProcess(p.proc, p.AppName)
 				if err != nil {
 					p.Err.Dangerf(err.Error())
 					return
@@ -167,10 +167,7 @@ func buildProject(p *Project) error {
 	goBuild.Dir = p.dir
 	goBuild.Stdout = p.Out.stream
 	goBuild.Stderr = p.Err.stream
-	if err := goBuild.Run(); err != nil {
-		return err
-	}
-	return nil
+	return goBuild.Run()
 }
 
 func runProject(p *Project) error {
@@ -202,7 +199,7 @@ func runProject(p *Project) error {
 	return nil
 }
 
-func killProcess(proc *os.Process) (err error) {
+func killProcess(proc *os.Process, appName string) (err error) {
 	if proc == nil {
 		return nil
 	}
@@ -214,9 +211,10 @@ func killProcess(proc *os.Process) (err error) {
 		}
 	}
 
-	if proc.Pid <= 0 {
+	if (isWindows || isMac) && proc.Pid <= 0 {
 		return nil
 	}
+
 	err = proc.Kill()
 	if err == nil {
 		_, err = proc.Wait()
@@ -227,7 +225,8 @@ func killProcess(proc *os.Process) (err error) {
 		} else if isMac {
 			err = exec.Command("killall", "-KILL", strconv.Itoa(proc.Pid)).Run()
 		} else {
-			err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
+			// err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
+			err = exec.Command("pkill", "-SIGINT", appName).Run()
 		}
 	}
 	proc = nil

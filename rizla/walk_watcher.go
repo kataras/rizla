@@ -72,7 +72,7 @@ func (w *walkWatcher) Loop() {
 
 	defer func() {
 		for _, p := range projects {
-			killProcess(p.proc)
+			killProcess(p.proc, p.AppName)
 		}
 		if !w.hasStoppedManually {
 			for i := range w.errListeners {

@@ -130,7 +130,7 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.7**
+Current: **v0.0.8**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
@@ -139,7 +139,6 @@ Read more about Semantic Versioning 2.0.0
  - http://semver.org/
  - https://en.wikipedia.org/wiki/Software_versioning
  - https://wiki.debian.org/UpstreamGuide#Releases_and_Versions
-
 
 Todo
 ------------
@@ -150,7 +149,7 @@ Todo
 Third-Party Licenses
 ------------
 
-Third-Party Licenses can be found [here](THIRDPARTY-LICENSE.md)
+Third-Party Licenses can be found [here](THIRDPARTY-LICENSE)
 
 
 License

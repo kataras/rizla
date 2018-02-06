@@ -1,3 +1,7 @@
+## 0.0.8
+
+Support flags as requested at [#13](https://github.com/kataras/rizla/issues/13) by @Zeno-Code.
+
 ## 0.0.6 -> 0.0.7
 
 Rizla uses the operating system's signals to fire a change because it is the fastest way and it consumes the minimal CPU.

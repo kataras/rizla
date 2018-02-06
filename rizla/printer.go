@@ -26,7 +26,7 @@ func NewPrinter(out *os.File) *Printer {
 // Dangerf prints a message with red colored letters
 func (printer *Printer) Dangerf(format string, a ...interface{}) {
 	printer.Add(color.FgRed)
-	printer.Printf(format, a...)
+	printer.Printf(format+"\n", a...)
 }
 
 // Infof prints a message with cyan colored letters
@@ -38,7 +38,7 @@ func (printer *Printer) Infof(format string, a ...interface{}) {
 // Successf prints a message with green colored letters
 func (printer *Printer) Successf(format string, a ...interface{}) {
 	printer.Add(color.FgGreen)
-	printer.Printf(format, a...)
+	printer.Printf(format+"\n", a...)
 }
 
 // Name returns the underline output stream Name

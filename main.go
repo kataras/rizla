@@ -46,8 +46,10 @@ func main() {
 	}
 
 	args := os.Args[1:]
-	programFiles := make([]string, 0)
+	programFiles := make(map[string][]string, 0) // key = main file, value = args.
 	var fsWatcher rizla.Watcher
+
+	var lastProgramFile string
 
 	for i, a := range args {
 		// The first argument must be the method type of the file system's watcher.
@@ -62,7 +64,13 @@ func main() {
 
 		// it's main.go or any go main program
 		if strings.HasSuffix(a, ".go") {
-			programFiles = append(programFiles, a)
+			programFiles[a] = []string{}
+			lastProgramFile = a
+			continue
+		}
+
+		if lastProgramFile != "" && len(args) > i+1 {
+			programFiles[lastProgramFile] = args[i:] // note that: the executable argument (1st arg) is set-ed by the exec.Command on `runProject`.
 			continue
 		}
 	}
@@ -75,16 +83,16 @@ func main() {
 	}
 
 	// check if given program files exist
-	for _, a := range programFiles {
+	for programFile := range programFiles {
 		// the argument is not the first  given is *.go but doesn't exists on user's disk
-		if p, _ := filepath.Abs(a); !fileExists(p) {
+		if p, _ := filepath.Abs(programFile); !fileExists(p) {
 			color.Red("Error: File " + p + " does not exists.\n")
 			help(-1)
 			return
 		}
 	}
 
-	rizla.RunWith(fsWatcher, programFiles...)
+	rizla.RunWith(fsWatcher, programFiles)
 }
 
 func help(code int) {

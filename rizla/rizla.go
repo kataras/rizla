@@ -49,10 +49,10 @@ func Len() int {
 }
 
 var (
-	errInvalidArgs = errors.New("Invalid arguments [%s], type -h to get assistant\n")
-	errUnexpected  = errors.New("Unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues\n")
-	errBuild       = errors.New("Failed to build the program.\n")
-	errRun         = errors.New("Failed to run the the program. Trace: %s\n")
+	errInvalidArgs = errors.New("invalid arguments [%s], type -h to get assistant")
+	errUnexpected  = errors.New("unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues")
+	errBuild       = errors.New("failed to build the program")
+	errRun         = errors.New("failed to run the the program. Trace: %s")
 )
 
 // RunWith starts the repeat of the build-run-watch-reload task of all projects
@@ -63,7 +63,7 @@ var (
 // second (optional) parameter(s) are the directories of the projects.
 //    it's optional because they can be added with the .Add(NewProject) before the RunWith.
 //
-func RunWith(watcher Watcher, sources ...string) {
+func RunWith(watcher Watcher, sources map[string][]string) {
 	// Author's notes: Because rizla's Run is not allowed to be called more than once
 	// the whole package works as it is, so the watcher here
 	// is CHANGING THE UNEXPORTED PACKGE VARIABLE 'fsWatcher'.
@@ -72,8 +72,8 @@ func RunWith(watcher Watcher, sources ...string) {
 	fsWatcher = watcher
 
 	if len(sources) > 0 {
-		for _, s := range sources {
-			Add(NewProject(s))
+		for programFile, args := range sources {
+			Add(NewProject(programFile, args...))
 		}
 	}
 
@@ -93,7 +93,7 @@ func RunWith(watcher Watcher, sources ...string) {
 	}
 
 	watcher.OnError(func(err error) {
-		Out.Dangerf("\n Error:" + err.Error())
+		Out.Dangerf("\nError:" + err.Error())
 	})
 
 	watcher.OnChange(func(p *Project, filename string) {
@@ -106,23 +106,23 @@ func RunWith(watcher Watcher, sources ...string) {
 				p.OnReload(filename)
 
 				// kill previous running instance
-				err := killProcess(p.proc)
+				err := killProcess(p.proc, p.AppName)
 				if err != nil {
-					p.Err.Dangerf(err.Error())
+					p.Err.Dangerf("kill: %v", err)
 					return
 				}
 
 				// go build
 				err = buildProject(p)
 				if err != nil {
-					p.Err.Dangerf(errBuild.Error())
+					p.Err.Dangerf("build: %v", errBuild)
 					return
 				}
 
 				// exec run the builded program
 				err = runProject(p)
 				if err != nil {
-					p.Err.Dangerf(errRun.Format(err.Error()).Error())
+					p.Err.Dangerf("run: %s", errRun.Format(err.Error()).Error())
 					return
 				}
 
@@ -136,15 +136,17 @@ func RunWith(watcher Watcher, sources ...string) {
 }
 
 // Run same as RunWith but runs with the default file system watcher
-//  which is the fsnotify (watch over file system's signals) or the last used with RunWith.
-func Run(sources ...string) {
+// which is the fsnotify (watch over file system's signals) or the last used with RunWith.
+//
+// It's a map of main files and their arguments, if any.
+func Run(sources map[string][]string) {
 	if fsWatcher != nil {
 		// if user already called RunWith before, the watcher is saved on the 'fsWatcher' variable,
 		// use that instead.
-		RunWith(fsWatcher, sources...)
+		RunWith(fsWatcher, sources)
 		return
 	}
-	RunWith(WatcherFromFlag(""), sources...)
+	RunWith(WatcherFromFlag(""), sources)
 }
 
 // Stop any projects are watched by the RunWith/Run method, this function should be call when you call the Run inside a goroutine.
@@ -167,10 +169,7 @@ func buildProject(p *Project) error {
 	goBuild.Dir = p.dir
 	goBuild.Stdout = p.Out.stream
 	goBuild.Stderr = p.Err.stream
-	if err := goBuild.Run(); err != nil {
-		return err
-	}
-	return nil
+	return goBuild.Run()
 }
 
 func runProject(p *Project) error {
@@ -180,7 +179,7 @@ func runProject(p *Project) error {
 		buildProject += ".exe"
 	}
 
-	runCmd := exec.Command("." + buildProject)
+	runCmd := exec.Command("."+buildProject, p.Args...)
 	runCmd.Dir = p.dir
 
 	if p.DisableProgramRerunOutput && p.i > 0 && p.proc != nil {
@@ -191,9 +190,10 @@ func runProject(p *Project) error {
 
 	runCmd.Stderr = p.Err.stream
 
-	if p.Args != nil && len(p.Args) > 0 {
-		runCmd.Args = p.Args[0 : len(p.Args)-1]
-	}
+	// Moved to exec.Command's second argument instead:
+	// if p.Args != nil && len(p.Args) > 0 {
+	// 	runCmd.Args = p.Args[0 : len(p.Args)-1]
+	// }
 
 	if err := runCmd.Start(); err != nil {
 		return err
@@ -202,7 +202,7 @@ func runProject(p *Project) error {
 	return nil
 }
 
-func killProcess(proc *os.Process) (err error) {
+func killProcess(proc *os.Process, appName string) (err error) {
 	if proc == nil {
 		return nil
 	}
@@ -214,9 +214,10 @@ func killProcess(proc *os.Process) (err error) {
 		}
 	}
 
-	if proc.Pid <= 0 {
+	if (isWindows || isMac) && proc.Pid <= 0 {
 		return nil
 	}
+
 	err = proc.Kill()
 	if err == nil {
 		_, err = proc.Wait()
@@ -224,10 +225,16 @@ func killProcess(proc *os.Process) (err error) {
 		// force kill, sometimes proc.Kill or Signal(os.Kill) doesn't kills
 		if isWindows {
 			err = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(proc.Pid)).Run()
+			if err != nil && err.Error() == "exit status 128" {
+				err = nil // skip that stupid error here.
+			}
+
+			// err = exec.Command("taskkill", "/im", appName+".exe").Run()
 		} else if isMac {
 			err = exec.Command("killall", "-KILL", strconv.Itoa(proc.Pid)).Run()
 		} else {
-			err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
+			// err = exec.Command("kill", "-INT", "-"+strconv.Itoa(proc.Pid)).Run()
+			err = exec.Command("pkill", "-SIGINT", appName).Run()
 		}
 	}
 	proc = nil

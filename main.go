@@ -70,7 +70,7 @@ func main() {
 		}
 
 		if lastProgramFile != "" && len(args) > i+1 {
-			programFiles[lastProgramFile] = args[i:] // note that: the executable argument (1st arg) is set-ed by the exec.Command on `runProject`.
+			programFiles[lastProgramFile] = append(programFiles[lastProgramFile], args[i:]...) // note that: the executable argument (1st arg) is set-ed by the exec.Command on `runProject`.
 			continue
 		}
 	}

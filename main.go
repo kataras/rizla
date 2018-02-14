@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/kataras/rizla/rizla"
@@ -25,6 +26,28 @@ const (
 	Description = "Rizla builds, runs and monitors your Go Applications with ease."
 )
 
+const delayArgName = "-delay"
+
+func getDelayFromArg(arg string) (time.Duration, bool) {
+	if strings.HasPrefix(arg, delayArgName) || strings.HasPrefix(arg, delayArgName[1:]) {
+		// [-]delay 5s
+		// [-]delay=5s
+		if spaceIdx := strings.IndexRune(arg, ' '); spaceIdx > 0 {
+			delayStr := arg[spaceIdx+1:]
+			d, _ := time.ParseDuration(delayStr)
+			return d, true
+		}
+
+		if equalIdx := strings.IndexRune(arg, '='); equalIdx > 0 {
+			delayStr := arg[equalIdx+1:]
+			d, _ := time.ParseDuration(delayStr)
+			return d, true
+		}
+	}
+
+	return 0, false
+}
+
 var helpTmpl = fmt.Sprintf(`NAME:
    %s - %s
 
@@ -32,6 +55,7 @@ USAGE:
    rizla main.go
    rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
    rizla -walk main.go [if -walk then rizla uses the stdlib's filepath.Walk method instead of file system's signals]
+   rizla -delay=5s main.go [if delay > 0 then it delays the reload, also note that it accepts the first change but the rest of changes every "delay"]
 VERSION:
    %s
    `, Name, Description, Version)
@@ -47,19 +71,31 @@ func main() {
 
 	args := os.Args[1:]
 	programFiles := make(map[string][]string, 0) // key = main file, value = args.
-	var fsWatcher rizla.Watcher
+	fsWatcher, _ := rizla.WatcherFromFlag("signal")
 
 	var lastProgramFile string
+	var delayOnDetect time.Duration
 
 	for i, a := range args {
-		// The first argument must be the method type of the file system's watcher.
-		// if -w,-walk,walk then
-		//   asks to use the stdlib's filepath.walk method instead of the operating system's signal.
-		//   It's only usage is when the user's IDE overrides the os' signals.
-		// otherwise
-		//   use the fsnotify's operating system's file system's signals.
-		if i == 0 {
-			fsWatcher = rizla.WatcherFromFlag(a)
+		// if main files with arguments aren't passed yet,
+		// then the argument(s) should refer to the rizla tool and not the
+		// external programs.
+		if lastProgramFile == "" {
+			// The first argument must be the method type of the file system's watcher.
+			// if -w,-walk,walk then
+			//   asks to use the stdlib's filepath.walk method instead of the operating system's signal.
+			//   It's only usage is when the user's IDE overrides the os' signals.
+			// otherwise
+			//   use the fsnotify's operating system's file system's signals.
+			if watcher, ok := rizla.WatcherFromFlag(a); ok {
+				fsWatcher = watcher
+				continue
+			}
+
+			if delay, ok := getDelayFromArg(a); ok {
+				delayOnDetect = delay
+				continue
+			}
 		}
 
 		// it's main.go or any go main program
@@ -92,7 +128,7 @@ func main() {
 		}
 	}
 
-	rizla.RunWith(fsWatcher, programFiles)
+	rizla.RunWith(fsWatcher, programFiles, delayOnDetect)
 }
 
 func help(code int) {

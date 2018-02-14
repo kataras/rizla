@@ -26,10 +26,14 @@ type (
 // This method keeps the watchers in the same spot.
 //
 // Note: this is why the internal watchers are not exported.
-func WatcherFromFlag(flag string) Watcher {
+func WatcherFromFlag(flag string) (Watcher, bool) {
 	if flag == "-w" || flag == "-walk" || flag == "walk" {
-		return newWalkWatcher()
+		return newWalkWatcher(), true
 	}
-	// default: "signal"
-	return newSignalWatcher()
+
+	if flag == "-s" || flag == "-signal" || flag == "signal" || flag == "default" {
+		return newSignalWatcher(), true
+	}
+
+	return nil, false
 }

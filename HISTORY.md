@@ -1,3 +1,13 @@
+## 0.0.9
+
+1. `rizla.Run()` -> `rizla.Run(map[string][]string)`. Run now accepts a `sources map[string][]string`, can be nil if projects added manually previously, the `key string` is the program filepath with `.go` extension and the `values []string` are any optional arguments that the program excepts to be passed. Therefore use `Run(nil)` if you used `rizla.Run()` before.
+
+2. `rizla.RunWith(watcher rizla.Watcher, programFile string)` -> `rizla.RunWith(watcher rizla.Watcher, sources map[string][]string, delayOnDetect time.Duration)`.
+
+3. At `rizla#Project` the property `AllowRunAfter time.Duration` added.
+
+4. New `-delay` cli flag added, as requested by @scorpnode at https://github.com/kataras/rizla/issues/14
+
 ## 0.0.8
 
 Support flags as requested at [#13](https://github.com/kataras/rizla/issues/13) by @Zeno-Code.

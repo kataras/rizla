@@ -63,7 +63,7 @@ var (
 // second (optional) parameter(s) are the directories of the projects.
 //    it's optional because they can be added with the .Add(NewProject) before the RunWith.
 //
-func RunWith(watcher Watcher, sources map[string][]string) {
+func RunWith(watcher Watcher, sources map[string][]string, delayOnDetect time.Duration) {
 	// Author's notes: Because rizla's Run is not allowed to be called more than once
 	// the whole package works as it is, so the watcher here
 	// is CHANGING THE UNEXPORTED PACKGE VARIABLE 'fsWatcher'.
@@ -73,7 +73,9 @@ func RunWith(watcher Watcher, sources map[string][]string) {
 
 	if len(sources) > 0 {
 		for programFile, args := range sources {
-			Add(NewProject(programFile, args...))
+			project := NewProject(programFile, args...)
+			project.AllowRunAfter = delayOnDetect
+			Add(project)
 		}
 	}
 
@@ -98,37 +100,56 @@ func RunWith(watcher Watcher, sources map[string][]string) {
 
 	watcher.OnChange(func(p *Project, filename string) {
 		if time.Now().After(p.lastChange.Add(p.AllowReloadAfter)) {
-			p.lastChange = time.Now()
-			match := p.Matcher(filename)
-
-			if match {
-
-				p.OnReload(filename)
-
-				// kill previous running instance
-				err := killProcess(p.proc, p.AppName)
-				if err != nil {
-					p.Err.Dangerf("kill: %v", err)
-					return
-				}
-
-				// go build
-				err = buildProject(p)
-				if err != nil {
-					p.Err.Dangerf("build: %v", errBuild)
-					return
-				}
-
-				// exec run the builded program
-				err = runProject(p)
-				if err != nil {
-					p.Err.Dangerf("run: %s", errRun.Format(err.Error()).Error())
-					return
-				}
-
-				p.OnReloaded(filename)
-
+			if match := p.Matcher(filename); !match {
+				return
 			}
+
+			if p.AllowRunAfter > 0 {
+
+				// Note that here, at "AllowRunAfter", maybe a lot of re-builds
+				// at the same time if the user saved without
+				// "AllowReloadAfter" configured, so every of the changes
+				// are allowed in short period of time.
+				// As a solution if AllowReloadAfter is not configured we will
+				// configure it here, we can't do it before the first try
+				// because it will wrong to wait "x" time to the first change detect allow.
+				// We could make it with 1-buf channel as well.
+				if p.AllowReloadAfter == 0 {
+					p.lastChange = time.Now()
+					p.AllowReloadAfter = p.AllowRunAfter
+					// if minus := 250 * time.Millisecond; p.AllowRunAfter > minus {
+					// 	p.AllowReloadAfter = p.AllowRunAfter - minus
+					// }
+				}
+				time.Sleep(p.AllowRunAfter)
+			}
+
+			p.lastChange = time.Now()
+			p.OnReload(filename)
+
+			// kill previous running instance
+			err := killProcess(p.proc, p.AppName)
+			if err != nil {
+				p.Err.Dangerf("kill: %v", err)
+				return
+			}
+
+			// go build
+			err = buildProject(p)
+			if err != nil {
+				p.Err.Dangerf("build: %v", errBuild)
+				return
+			}
+
+			// exec run the builded program
+			err = runProject(p)
+			if err != nil {
+				p.Err.Dangerf("run: %s", errRun.Format(err.Error()).Error())
+				return
+			}
+
+			p.OnReloaded(filename)
+
 		}
 	})
 
@@ -143,10 +164,11 @@ func Run(sources map[string][]string) {
 	if fsWatcher != nil {
 		// if user already called RunWith before, the watcher is saved on the 'fsWatcher' variable,
 		// use that instead.
-		RunWith(fsWatcher, sources)
+		RunWith(fsWatcher, sources, 0)
 		return
 	}
-	RunWith(WatcherFromFlag(""), sources)
+
+	RunWith(newSignalWatcher(), sources, 0)
 }
 
 // Stop any projects are watched by the RunWith/Run method, this function should be call when you call the Run inside a goroutine.

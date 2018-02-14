@@ -73,6 +73,9 @@ type Project struct {
 	// AllowReloadAfter skip reload on file changes that made too fast from the last reload
 	// minimum allowed duration is 3 seconds.
 	AllowReloadAfter time.Duration
+	// AllowRunAfter it accepts the file changes
+	// but it waits "x" duration for the reload to happen.
+	AllowRunAfter time.Duration
 	// OnReload fires when when file has been changed and rizla is going to reload the project
 	// the parameter is the changed file name
 	OnReload func(string)

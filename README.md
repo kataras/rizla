@@ -17,23 +17,27 @@ $ go get -u github.com/kataras/rizla
 $ rizla main.go #single project monitoring
 $ rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go #multi projects monitoring
 $ rizla -walk main.go #prepend '-walk' only when the default file changes scanning method doesn't works for you.
+$ rizla -delay=5s main.go # if delay > 0 then it delays the reload, also note that it accepts the first change but the rest of changes every "delay".
 ```
 
 Want to use it from your project's source code? easy
+
 ```sh
 $ cat from_code_simple.go
 ```
+
 ```go
 package main
 
 import (
-	"github.com/kataras/rizla/rizla"
+    "github.com/kataras/rizla/rizla"
 )
 
 func main() {
   // Build, run & start monitoring the projects
   rizla.Run("C:/iris-project/main.go", "C:/otherproject/main.go")
-	// rizla.RunWith(rizla.WatcherFromFlag("-walk"), "./main.go")
+  // watcher, _ := rizla.WatcherFromFlag("-walk")
+  // rizla.RunWith(watcher, "./main.go", 0)
 }
 ```
 
@@ -44,11 +48,12 @@ $ cat from_code_pro.go
 package main
 
 import (
-	"github.com/kataras/rizla/rizla"
-	"path/filepath"
-	"runtime"
-	"time"
-	"os"
+    "path/filepath"
+    "runtime"
+    "time"
+    "os"
+
+    "github.com/kataras/rizla/rizla"
 )
 
 func main() {
@@ -68,30 +73,30 @@ func main() {
   // Custom subdirectory matcher, for the watcher, return true to include this folder to the watcher
   // the default is:
   project.Watcher = func(absolutePath string) bool {
-     	base := filepath.Base(abs)
-		return !(base == ".git" || base == "node_modules" || base == "vendor")
+        base := filepath.Base(abs)
+        return !(base == ".git" || base == "node_modules" || base == "vendor")
   }
   // Custom file matcher on runtime (file change), return true to reload when a file with this file name changed
   // the default is:
   project.Matcher = func(filename string) bool {
-		isWindows = runtime.GOOS == "windows"
-		goExt     = ".go"
-		return (filepath.Ext(fullname) == goExt) ||
-		(!isWindows && strings.Contains(fullname, goExt))
+        isWindows = runtime.GOOS == "windows"
+        goExt     = ".go"
+        return (filepath.Ext(fullname) == goExt) ||
+        (!isWindows && strings.Contains(fullname, goExt))
   }
   // Add arguments, these will be used from the executable file
   project.Args = []string{"-myargument","the value","-otherargument","a value"}
   // Custom callback before reload, the default is:
   project.OnReload = func(string) {
-		fromproject := ""
-		if p.Name != "" {
-			fromproject = "From project '" + project.Name + "': "
-		}
-		project.Out.Infof("\n%sA change has been detected, reloading now...", fromproject)
+        fromproject := ""
+        if p.Name != "" {
+            fromproject = "From project '" + project.Name + "': "
+        }
+        project.Out.Infof("\n%sA change has been detected, reloading now...", fromproject)
    }
    // Custom callback after reload, the default is:
    project.OnReloaded = func(string) {
- 		project.Out.Successf("ready!\n")
+        project.Out.Successf("ready!\n")
    }
 
   // End of optional
@@ -99,17 +104,15 @@ func main() {
   // Add the project to the rizla container
   rizla.Add(project)
   //  Build, run & start monitoring the project(s)
-  rizla.Run()
+  rizla.Run(nil)
 }
 ```
 
 > That's all!
 
-
 FAQ
 ------------
 Ask questions and get real-time answers from the [Chat][CHAT].
-
 
 Features
 ------------
@@ -118,19 +121,19 @@ Features
 - Multi-Monitoring - Supports monitoring of unlimited projects.
 - Rizla, by-default, uses the operating system's signals to fire a change because it is the fastest way and it consumes the minimal CPU.
    - You 're still able to change the watcher to use the `filepath.Walk` too with `-walk` flag.
-
+- delay reload on detect change with `-delay`
 
 People
+
 ------------
 If you'd like to discuss this package, or ask questions about it, feel free to [Chat][CHAT].
 
 The author of rizla is [@kataras](https://github.com/kataras).
 
-
 Versioning
 ------------
 
-Current: **v0.0.8**
+Current: **v0.0.9**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
@@ -143,14 +146,13 @@ Read more about Semantic Versioning 2.0.0
 Todo
 ------------
 
- - [ ] Tests
- - [ ] Provide full examples.
+- [ ] Tests
+- [ ] Provide full examples.
 
 Third-Party Licenses
 ------------
 
 Third-Party Licenses can be found [here](THIRDPARTY-LICENSE)
-
 
 License
 ------------
@@ -163,7 +165,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/rizla
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v0.0.8-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v0.0.9-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/rizla

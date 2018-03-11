@@ -13,13 +13,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/kataras/golog"
 	"github.com/kataras/rizla/rizla"
 )
 
 const (
 	// Version of rizla command line tool
-	Version = "0.0.6"
+	Version = "0.1.0"
 	// Name of rizla
 	Name = "Rizla"
 	// Description of rizla
@@ -62,6 +62,8 @@ VERSION:
 
 func main() {
 	argsLen := len(os.Args)
+
+	errorf := golog.New().SetOutput(os.Stderr).Errorf
 
 	if argsLen <= 1 {
 		help(-1)
@@ -113,7 +115,7 @@ func main() {
 
 	// no program files given
 	if len(programFiles) == 0 {
-		color.Red("Error: Please provide a *.go file.\n")
+		errorf("please provide a *.go file.\n")
 		help(-1)
 		return
 	}
@@ -122,7 +124,7 @@ func main() {
 	for programFile := range programFiles {
 		// the argument is not the first  given is *.go but doesn't exists on user's disk
 		if p, _ := filepath.Abs(programFile); !fileExists(p) {
-			color.Red("Error: File " + p + " does not exists.\n")
+			errorf("file " + p + " does not exists.\n")
 			help(-1)
 			return
 		}

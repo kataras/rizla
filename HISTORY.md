@@ -1,3 +1,9 @@
+## 0.1.0
+
+Rizla drops support for multi `main.go:func main()` programs in the same directory. It still accepts a filename with `main.go` but it depends on the directory now (as all examples already shown) in order to be able to run and watch projects with multiple `.go` files in the project's root directory, this is very useful especially when the project depends on libraries like `go-bindata` with a result of `.go` file in the root directory. For most cases that will not change anything. If you used to have many go programs with `func main()` in the same root directory please consider that this is not idiomatic and you must change this habit, the sooner the better.
+
+> `main.go` can be any filename contains the `func main(){ ... }` of course.
+
 ## 0.0.9
 
 1. `rizla.Run()` -> `rizla.Run(map[string][]string)`. Run now accepts a `sources map[string][]string`, can be nil if projects added manually previously, the `key string` is the program filepath with `.go` extension and the `values []string` are any optional arguments that the program excepts to be passed. Therefore use `Run(nil)` if you used `rizla.Run()` before.

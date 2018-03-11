@@ -1,11 +1,10 @@
 package rizla
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/kataras/go-errors"
 )
 
 type walkWatcher struct {
@@ -38,6 +37,12 @@ func (w *walkWatcher) Stop() {
 	w.stopChan <- true
 }
 
+var errDoneNot = errors.New("done")
+
+// DefaultWalkLoopSleep it's the sleep time of the loop when --walk flag is used(`filepath#Walk`).
+// Defaults to 1.3 second.
+var DefaultWalkLoopSleep = 1350 * time.Second
+
 func (w *walkWatcher) loop(p *Project, stopChan chan bool) {
 	for {
 		select {
@@ -52,13 +57,13 @@ func (w *walkWatcher) loop(p *Project, stopChan chan bool) {
 					for i := range w.changeListeners {
 						w.changeListeners[i](p, path)
 					}
-					return errors.New("doesn't matters. We finished with this filepath visit")
+					return errDoneNot
 				}
 
 				return nil
 			})
-			// loop every 1.3 second
-			time.Sleep(1350 * time.Second)
+			// loop every 1.3 second.
+			time.Sleep(DefaultWalkLoopSleep)
 		}
 	}
 }

@@ -3,12 +3,13 @@ package rizla
 import (
 	"os"
 	"path/filepath"
-
 	"strings"
 	"time"
+
+	"github.com/kataras/golog"
 )
 
-const minimumAllowReloadAfter = time.Duration(3) * time.Second
+const minimumAllowReloadAfter = time.Duration(2) * time.Second
 
 // DefaultDisableProgramRerunOutput a long name but, it disables the output of the program's 'messages' after the first successfully run for each of the projects
 // the project iteral can be override this value.
@@ -39,14 +40,17 @@ func DefaultOnReload(p *Project) func(string) {
 		if p.Name != "" {
 			fromproject = "From project '" + p.Name + "': "
 		}
-		p.Out.Infof("\n%sA change has been detected, reloading now...", fromproject)
+		p.Out.Infof("%sA change has been detected, reloading now...", fromproject)
 	}
 }
 
-// DefaultOnReloaded fired when reload has been finished
+// var rdy = []byte("ready!\n")
+
+// DefaultOnReloaded fired when reload has been finished.
+// Defaults to noOp.
 func DefaultOnReloaded(p *Project) func(string) {
 	return func(string) {
-		p.Out.Successf("ready!\n")
+		// p.Out.Printer.Output.Write(rdy)
 	}
 }
 
@@ -61,9 +65,9 @@ type Project struct {
 	AppName string
 	Args    []string
 	// The Output destination (sent by rizla and your program)
-	Out *Printer
+	Out *golog.Logger
 	// The Err Output destination (sent on rizla errors and your program's errors)
-	Err *Printer
+	Err *golog.Logger
 	// Watcher accepts subdirectories by the watcher
 	// executes before the watcher starts,
 	// if return true, then this (absolute) subdirectory is watched by watcher
@@ -116,8 +120,8 @@ func NewProject(mainfile string, args ...string) *Project {
 		MainFile:                  mainfile,
 		AppName:                   appName,
 		Args:                      args,
-		Out:                       NewPrinter(os.Stdout),
-		Err:                       NewPrinter(os.Stderr),
+		Out:                       golog.New().SetOutput(os.Stdout),
+		Err:                       golog.New().SetOutput(os.Stderr),
 		Watcher:                   DefaultWatcher,
 		Matcher:                   DefaultGoMatcher,
 		AllowReloadAfter:          minimumAllowReloadAfter,

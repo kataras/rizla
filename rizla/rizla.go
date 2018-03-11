@@ -2,13 +2,15 @@
 package rizla
 
 import (
+	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
 
-	"github.com/kataras/go-errors"
+	"github.com/kataras/golog"
 )
 
 const (
@@ -18,9 +20,10 @@ const (
 )
 
 var (
-	// Out The Printer output for watcher errors
-	// set this by rizla.NewPrinter(*os.File)
-	Out = NewPrinter(os.Stdout)
+	// Out is the logger which prints watcher errors and information.
+	//
+	// Change its printer's Output (io.Writer) by `Out.SetOutput(io.Writer)`.
+	Out = golog.New().SetOutput(os.Stdout)
 
 	projects []*Project
 
@@ -48,12 +51,7 @@ func Len() int {
 	return len(projects)
 }
 
-var (
-	errInvalidArgs = errors.New("invalid arguments [%s], type -h to get assistant")
-	errUnexpected  = errors.New("unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues")
-	errBuild       = errors.New("failed to build the program")
-	errRun         = errors.New("failed to run the the program. Trace: %s")
-)
+var errUnexpected = errors.New("unexpected error!!! Please post an issue here: https://github.com/kataras/rizla/issues")
 
 // RunWith starts the repeat of the build-run-watch-reload task of all projects
 // receives optional parameters which can be the main source file
@@ -82,20 +80,20 @@ func RunWith(watcher Watcher, sources map[string][]string, delayOnDetect time.Du
 	for _, p := range projects {
 		// go build
 		if err := buildProject(p); err != nil {
-			p.Err.Dangerf(errBuild.Error())
+			p.Err.Errorf(err.Error())
 			continue
 		}
 
 		// exec run the builded program
 		if err := runProject(p); err != nil {
-			p.Err.Dangerf(errRun.Error())
+			p.Err.Errorf(err.Error())
 			continue
 		}
 
 	}
 
 	watcher.OnError(func(err error) {
-		Out.Dangerf("\nError:" + err.Error())
+		Out.Errorf(err.Error())
 	})
 
 	watcher.OnChange(func(p *Project, filename string) {
@@ -130,21 +128,21 @@ func RunWith(watcher Watcher, sources map[string][]string, delayOnDetect time.Du
 			// kill previous running instance
 			err := killProcess(p.proc, p.AppName)
 			if err != nil {
-				p.Err.Dangerf("kill: %v", err)
+				p.Err.Errorf("kill: %v", err)
 				return
 			}
 
 			// go build
 			err = buildProject(p)
 			if err != nil {
-				p.Err.Dangerf("build: %v", errBuild)
+				p.Err.Errorf(err.Error())
 				return
 			}
 
 			// exec run the builded program
 			err = runProject(p)
 			if err != nil {
-				p.Err.Dangerf("run: %s", errRun.Format(err.Error()).Error())
+				p.Err.Errorf("failed to run the project: %v", err)
 				return
 			}
 
@@ -186,31 +184,37 @@ func isDirectory(fullname string) bool {
 }
 
 func buildProject(p *Project) error {
-	relative := p.MainFile[len(p.dir)+1:len(p.MainFile)-3] + goExt
-	goBuild := exec.Command("go", "build", relative)
+
+	// relative := p.MainFile[len(p.dir)+1:len(p.MainFile)-3] + goExt
+	goBuild := exec.Command("go", "build", ".")
 	goBuild.Dir = p.dir
-	goBuild.Stdout = p.Out.stream
-	goBuild.Stderr = p.Err.stream
+	goBuild.Stdout = p.Out.Printer.Output
+	goBuild.Stderr = p.Err.Printer.Output
 	return goBuild.Run()
 }
 
 func runProject(p *Project) error {
 
-	buildProject := p.MainFile[len(p.dir) : len(p.MainFile)-3] // with prepended slash
+	// buildProject := p.MainFile[len(p.dir) : len(p.MainFile)-3] // with prepended slash
+
+	buildProject := filepath.Base(p.dir)
+
 	if isWindows {
 		buildProject += ".exe"
 	}
 
-	runCmd := exec.Command("."+buildProject, p.Args...)
+	// runCmd := exec.Command("."+buildProject, p.Args...)
+
+	runCmd := exec.Command("./"+buildProject, p.Args...)
 	runCmd.Dir = p.dir
 
 	if p.DisableProgramRerunOutput && p.i > 0 && p.proc != nil {
 		// if already ran once succesfuly, we don't need to printout the output of the program, because we will have big outputs if the program has banner (like Iris :))
 	} else {
-		runCmd.Stdout = p.Out.stream
+		runCmd.Stdout = p.Out.Printer.Output
 	}
 
-	runCmd.Stderr = p.Err.stream
+	runCmd.Stderr = p.Err.Printer.Output
 
 	// Moved to exec.Command's second argument instead:
 	// if p.Args != nil && len(p.Args) > 0 {

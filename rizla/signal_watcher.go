@@ -55,7 +55,7 @@ func (w *signalWatcher) Loop() {
 
 		// add its root folder first
 		if err := w.underline.Add(p.dir); err != nil {
-			p.Err.Dangerf("\n" + err.Error() + "\n")
+			p.Err.Errorf("\n" + err.Error() + "\n")
 		}
 
 		visitFn := func(path string, f os.FileInfo, err error) error {
@@ -63,7 +63,7 @@ func (w *signalWatcher) Loop() {
 				// check if this subdir is allowed
 				if p.Watcher(path) {
 					if err := w.underline.Add(path); err != nil {
-						p.Err.Dangerf("\n" + err.Error() + "\n")
+						p.Err.Errorf("\n" + err.Error() + "\n")
 					}
 				} else {
 					return filepath.SkipDir
@@ -120,7 +120,7 @@ func (w *signalWatcher) Loop() {
 					// if a folder created after the first Adds, add them here at runtime.
 					if isDirectory(filename) && p.Watcher(filename) {
 						if err := w.underline.Add(filename); err != nil {
-							p.Err.Dangerf("\n" + err.Error() + "\n")
+							p.Err.Errorf("\n" + err.Error() + "\n")
 						}
 					}
 				}

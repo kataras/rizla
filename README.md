@@ -62,10 +62,9 @@ func main() {
 
   // The below are optional
 
-  // Optional, set the messages/logs output destination of our app project,
-  // let's set them to their defaults
-  project.Out = rizla.NewPrinter(os.Stdout)
-  project.Err = rizla.NewPrinter(os.Stderr)
+  // Optionally, change the out for info logs and error messages.
+  project.Out.SetOutput(os.Stdout)
+  project.Err.SetOutput(os.Stderr)
 
   project.Name = "My super project"
   // Allow reload every 3 seconds or more no less
@@ -92,11 +91,11 @@ func main() {
         if p.Name != "" {
             fromproject = "From project '" + project.Name + "': "
         }
-        project.Out.Infof("\n%sA change has been detected, reloading now...", fromproject)
+        project.Out.Infof("%sA change has been detected, reloading now...", fromproject)
    }
    // Custom callback after reload, the default is:
    project.OnReloaded = func(string) {
-        project.Out.Successf("ready!\n")
+        
    }
 
   // End of optional
@@ -133,7 +132,7 @@ The author of rizla is [@kataras](https://github.com/kataras).
 Versioning
 ------------
 
-Current: **v0.0.9**
+Current: **v0.1.0**
 
 [HISTORY](https://github.com/kataras/rizla/blob/master/HISTORY.md) file is your best friend!
 
@@ -165,7 +164,7 @@ License can be found [here](LICENSE).
 [Travis]: http://travis-ci.org/kataras/rizla
 [License Widget]: https://img.shields.io/badge/license-MIT%20%20License%20-E91E63.svg?style=flat-square
 [License]: https://github.com/kataras/rizla/blob/master/LICENSE
-[Release Widget]: https://img.shields.io/badge/release-v0.0.9-blue.svg?style=flat-square
+[Release Widget]: https://img.shields.io/badge/release-v0.1.0-blue.svg?style=flat-square
 [Release]: https://github.com/kataras/rizla/releases
 [Chat Widget]: https://img.shields.io/badge/community-chat-00BCD4.svg?style=flat-square
 [Chat]: https://kataras.rocket.chat/channel/rizla

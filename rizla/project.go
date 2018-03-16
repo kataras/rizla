@@ -2,6 +2,7 @@ package rizla
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -33,6 +34,13 @@ func DefaultWatcher(abs string) bool {
 	return !(base == ".git" || base == "node_modules" || base == "vendor" || base == ".")
 }
 
+// OnReloadScripts simple file names which will execute a script, i.e `./on_reload.sh` or `./on_reload.bat` or even `service supervisor restart`
+// on windows, it will just execute that based on the operating system, nothing crazy here,
+// they are filled by the cli but they can be customized by the source as well.
+//
+// If contains whitespaces, after the first whitespace they are the command's flags (if not a script file).
+var OnReloadScripts []string
+
 // DefaultOnReload fired when file has changed and reload going to happens
 func DefaultOnReload(p *Project) func(string) {
 	return func(string) {
@@ -41,6 +49,30 @@ func DefaultOnReload(p *Project) func(string) {
 			fromproject = "From project '" + p.Name + "': "
 		}
 		p.Out.Infof("%sA change has been detected, reloading now...", fromproject)
+
+		if len(OnReloadScripts) > 0 {
+			p.Out.Infof("%sExecuting commands from %s before restart...", fromproject, strings.Join(OnReloadScripts, ", "))
+			for _, s := range OnReloadScripts {
+
+				// The below should work for things like
+				// service supervisor restart
+				nameAndFlags := strings.Split(s, " ")
+				var args []string
+				name := nameAndFlags[0]
+				if len(nameAndFlags) > 1 {
+					args = nameAndFlags[1:]
+				}
+
+				cmd := exec.Command(name, args...)
+				cmd.Stderr = p.Err.Printer.Output
+				cmd.Stdout = p.Out.Printer.Output
+				if err := cmd.Run(); err != nil {
+					p.Out.Errorf("%s%s run: %v", fromproject, s, err)
+					os.Exit(1)
+				}
+				cmd.Wait() // ignore error.
+			}
+		}
 	}
 }
 

@@ -1,3 +1,43 @@
+## 0.1.1
+
+Add `-onreload` to execute commands on reload through the `rizla` cli.
+
+Example:
+
+**on_reload.bat**
+
+```sh
+@echo off
+echo Hello, custom script can goes here before reload, i.e build https://github.comkataras/bindata things!
+```
+
+**main.go**
+
+```go
+// Package main shows you how you can execute commands on reload
+// in this example we will execute a simple bat file on windows
+// but you can pass anything, it just runs the `exec.Command` based on -onreload= flag's value.
+package main
+
+import (
+	"flag"
+	"fmt"
+)
+
+func main() {
+	host := flag.String("host", "", "the host")
+	port := flag.Int("port", 0, "the port")
+	flag.Parse()
+	fmt.Printf("The 'host' argument is: %v\n", *host)
+	fmt.Printf("The 'port' argument is: %v\n", *port)
+}
+
+```
+
+```sh
+$ rizla -onreload="on_reload.bat" main.go -host myhost.com -port 1193
+```
+
 ## 0.1.0
 
 Rizla drops support for multi `main.go:func main()` programs in the same directory. It still accepts a filename with `main.go` but it depends on the directory now (as all examples already shown) in order to be able to run and watch projects with multiple `.go` files in the project's root directory, this is very useful especially when the project depends on libraries like `go-bindata` with a result of `.go` file in the root directory. For most cases that will not change anything. If you used to have many go programs with `func main()` in the same root directory please consider that this is not idiomatic and you must change this habit, the sooner the better.

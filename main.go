@@ -19,7 +19,7 @@ import (
 
 const (
 	// Version of rizla command line tool
-	Version = "0.1.0"
+	Version = "0.1.1"
 	// Name of rizla
 	Name = "Rizla"
 	// Description of rizla
@@ -30,22 +30,47 @@ const delayArgName = "-delay"
 
 func getDelayFromArg(arg string) (time.Duration, bool) {
 	if strings.HasPrefix(arg, delayArgName) || strings.HasPrefix(arg, delayArgName[1:]) {
-		// [-]delay 5s
 		// [-]delay=5s
-		if spaceIdx := strings.IndexRune(arg, ' '); spaceIdx > 0 {
-			delayStr := arg[spaceIdx+1:]
-			d, _ := time.ParseDuration(delayStr)
-			return d, true
-		}
+		// [-]delay 5s
 
 		if equalIdx := strings.IndexRune(arg, '='); equalIdx > 0 {
 			delayStr := arg[equalIdx+1:]
 			d, _ := time.ParseDuration(delayStr)
 			return d, true
 		}
+
+		if spaceIdx := strings.IndexRune(arg, ' '); spaceIdx > 0 {
+			delayStr := arg[spaceIdx+1:]
+			d, _ := time.ParseDuration(delayStr)
+			return d, true
+		}
+
 	}
 
 	return 0, false
+}
+
+const onReloadArg = "-onreload"
+
+func getOnReloadArg(arg string) (string, bool) {
+	if strings.HasPrefix(arg, onReloadArg) || strings.HasPrefix(arg, onReloadArg[1:]) {
+		// first equality ofc...
+		// [-]onreload=cmd1,cmd2,file.sh
+		// [-]onreload cmd1,cmd2,file.sh
+
+		if equalIdx := strings.IndexRune(arg, '='); equalIdx > 0 {
+			src := arg[equalIdx+1:]
+			return src, true
+		}
+
+		if spaceIdx := strings.IndexRune(arg, ' '); spaceIdx > 0 {
+			src := arg[spaceIdx+1:]
+			return src, true
+		}
+
+	}
+
+	return "", false
 }
 
 var helpTmpl = fmt.Sprintf(`NAME:
@@ -56,6 +81,7 @@ USAGE:
    rizla C:/myprojects/project1/main.go C:/myprojects/project2/main.go C:/myprojects/project3/main.go
    rizla -walk main.go [if -walk then rizla uses the stdlib's filepath.Walk method instead of file system's signals]
    rizla -delay=5s main.go [if delay > 0 then it delays the reload, also note that it accepts the first change but the rest of changes every "delay"]
+   rizla -onreload="service supervisor restart" main.go or rizla -onreload="cmd /C echo Hello World!" main.go
 VERSION:
    %s
    `, Name, Description, Version)
@@ -97,6 +123,10 @@ func main() {
 			if delay, ok := getDelayFromArg(a); ok {
 				delayOnDetect = delay
 				continue
+			}
+
+			if onReloadSources, ok := getOnReloadArg(a); ok {
+				rizla.OnReloadScripts = strings.Split(onReloadSources, ",")
 			}
 		}
 

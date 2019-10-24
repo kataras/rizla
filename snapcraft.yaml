@@ -1,0 +1,21 @@
+name: rizla
+version: git
+summary: Go Source Reloader.
+description: |
+  Rizla builds, runs and monitors your Go Applications with ease.
+
+confinement: devmode
+base: core18
+
+parts:
+  rizla:
+    plugin: go
+    go-importpath: github.com/kataras/rizla
+    source: .
+    source-type: git
+    build-packages:
+      - gcc
+
+apps:
+  rizla:
+    command: bin/rizla

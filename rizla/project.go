@@ -158,8 +158,8 @@ func NewProject(mainfile string, args ...string) *Project {
 		Matcher:                   DefaultGoMatcher,
 		AllowReloadAfter:          minimumAllowReloadAfter,
 		DisableProgramRerunOutput: DefaultDisableProgramRerunOutput,
-		dir:        dir,
-		lastChange: time.Now(),
+		dir:                       dir,
+		lastChange:                time.Now(),
 	}
 
 	p.OnReload = DefaultOnReload(p)

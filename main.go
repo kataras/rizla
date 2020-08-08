@@ -84,7 +84,7 @@ USAGE:
    rizla -onreload="service supervisor restart" main.go or rizla -onreload="cmd /C echo Hello World!" main.go
 VERSION:
    %s
-   `, Name, Description, Version)
+`, Name, Description, Version)
 
 func main() {
 	argsLen := len(os.Args)
